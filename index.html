@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucid Sound Work — Invoice Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init("a7y4Xo20kH4NMNI5Q");</script>
+<style>
+:root{--ink:#0f0f0f;--ink2:#3a3a3a;--ink3:#888;--paper:#f5f2ec;--paper2:#ede9e0;--paper3:#e2ddd3;--accent:#1a1a1a;--gold:#c8a84b;--gold2:#f0d98a;--red:#b83232;--green:#2a7a3b;--white:#fff;--r:3px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);min-height:100vh}
+.wrap{display:grid;grid-template-columns:380px 1fr;min-height:100vh}
+.panel{background:var(--accent);color:var(--paper);overflow-y:auto;position:sticky;top:0;height:100vh}
+.panel::-webkit-scrollbar{width:4px}.panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.ph{padding:28px 28px 20px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+.logo-sub{font-size:10px;letter-spacing:.08em;color:rgba(255,255,255,0.35);text-transform:uppercase}
+.pb{padding:20px 28px 32px}
+.st{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(200,168,75,0.25)}
+.fg{margin-bottom:10px}
+.fl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:4px;display:block}
+.fi{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--paper);font-family:'DM Mono',monospace;font-size:11px;padding:8px 10px;border-radius:var(--r);outline:none;transition:.2s}
+.fi:focus{border-color:var(--gold);background:rgba(200,168,75,0.06)}
+.fi option{background:#1a1a1a;color:var(--paper)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.items-list{display:flex;flex-direction:column;gap:8px}
+.ic{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r);padding:12px;position:relative}
+.rb{position:absolute;top:8px;right:8px;background:none;border:none;color:rgba(255,255,255,0.25);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:2px;transition:.15s}
+.rb:hover{color:var(--red);background:rgba(184,50,50,0.12)}
+.ia{background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.2);color:var(--gold2);font-family:'DM Mono',monospace;font-size:11px;padding:7px 10px;border-radius:var(--r);text-align:right;font-weight:500}
+.add-btn{width:100%;padding:10px;background:rgba(200,168,75,0.08);border:1px dashed rgba(200,168,75,0.3);color:var(--gold);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;cursor:pointer;border-radius:var(--r);transition:.2s;text-transform:uppercase;margin-top:10px}
+.add-btn:hover{background:rgba(200,168,75,0.15);border-color:var(--gold)}
+.dt{display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:10px;color:rgba(255,255,255,0.4);user-select:none}
+.dt input{accent-color:var(--gold)}
+.dt:hover{color:rgba(255,255,255,0.7)}
+#dr{display:none;margin-top:8px}
+.ar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+.btn{padding:11px 14px;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;border:none;border-radius:var(--r);cursor:pointer;transition:.2s}
+.bp{background:var(--gold);color:var(--ink)}.bp:hover{background:var(--gold2)}
+.bs{background:rgba(255,255,255,0.07);color:var(--paper);border:1px solid rgba(255,255,255,0.12)}.bs:hover{background:rgba(255,255,255,0.12)}
+.preview{padding:40px 48px;background:var(--paper);overflow-y:auto}
+.doc{max-width:720px;margin:0 auto;background:var(--white);box-shadow:0 4px 24px rgba(0,0,0,0.12);border-radius:2px;overflow:hidden}
+.dh{background:var(--accent);padding:32px 40px 28px;display:flex;justify-content:space-between;align-items:flex-end}
+.db{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:.06em;color:var(--white);text-transform:uppercase}
+.dbs{font-size:10px;letter-spacing:.15em;color:var(--gold);margin-top:3px;font-family:'DM Mono',monospace}
+.dtw{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--gold);letter-spacing:.08em;text-align:right}
+.dn{font-size:11px;color:rgba(255,255,255,0.5);font-family:'DM Mono',monospace;margin-top:2px;text-align:right}
+.dm{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--paper3);background:var(--paper2)}
+.dmi{padding:14px 20px;border-right:1px solid var(--paper3)}.dmi:last-child{border-right:none}
+.ml{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.mv{font-size:12px;font-weight:500;color:var(--ink)}
+.sb{display:inline-block;padding:2px 8px;border-radius:2px;font-size:10px;font-weight:500;letter-spacing:.08em;font-family:'Syne',sans-serif}
+.su{background:#fef0f0;color:var(--red)}.sp{background:#fef9e7;color:#b8830a}.sk{background:#f0faf2;color:var(--green)}
+.dp{display:grid;grid-template-columns:1fr 1fr;padding:28px 40px;gap:24px;border-bottom:1px solid var(--paper3)}
+.pl{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-family:'Syne',sans-serif;font-weight:700}
+.pn{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px}
+.pd{font-size:11px;color:var(--ink2);line-height:1.7}
+.ph2{color:var(--ink3);font-style:italic}
+.tw{padding:0 40px 28px}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+thead tr{background:var(--accent)}
+thead th{padding:10px 14px;font-family:'Syne',sans-serif;font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,0.7);text-align:left}
+thead th:last-child,tbody td:last-child{text-align:right}
+thead th:nth-child(3),tbody td:nth-child(3){text-align:center}
+tbody tr{border-bottom:1px solid var(--paper3)}
+tbody tr:nth-child(even){background:var(--paper)}
+tbody td{padding:12px 14px;font-size:11px;vertical-align:top}
+tbody td:last-child{font-weight:500}
+.ts{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;margin-bottom:2px}
+.td{font-size:10px;color:var(--ink3)}
+.es{text-align:center;padding:32px;color:var(--ink3);font-size:11px;font-style:italic}
+.tot{display:flex;justify-content:flex-end;padding:0 40px 28px}
+.tb{width:260px}
+.tr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--paper3);font-size:11px}
+.tf{padding:12px 14px;margin-top:4px;background:var(--accent);border-radius:var(--r);border-bottom:none!important}
+.tf .tl,.tf .tv{color:var(--white);font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.tf .tv{color:var(--gold)}
+.dr2 .tv{color:var(--green)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--paper3)}
+.fb{padding:20px 24px;border-right:1px solid var(--paper3)}.fb:last-child{border-right:none}
+.ft{font-family:'Syne',sans-serif;font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.fbd{font-size:10px;color:var(--ink2);line-height:1.8}
+.bar{background:var(--paper2);padding:12px 40px;text-align:center;font-size:9px;color:var(--ink3);letter-spacing:.08em;border-top:1px solid var(--paper3)}
+@media print{.panel{display:none}.wrap{grid-template-columns:1fr}.preview{padding:0}.doc{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<aside class="panel">
+  <div class="ph">
+    <div class="logo">Lucid Sound Work</div>
+    <div class="logo-sub">Invoice Generator</div>
+  </div>
+  <div class="pb">
+    <div class="st">Invoice Info</div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Invoice #</label><input class="fi" id="inum" placeholder="LSW-0085" oninput="render()"></div>
+      <div class="fg"><label class="fl">Status</label>
+        <select class="fi" id="istat" onchange="render()">
+          <option value="unpaid">Unpaid</option>
+          <option value="partial">Partial</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Invoice Date</label><input class="fi" id="idate" type="date" oninput="render()"></div>
+      <div class="fg"><label class="fl">Due Date</label><input class="fi" id="idue" type="date" oninput="render()"></div>
+    </div>
+    <div class="st">Client</div>
+    <div class="fg"><label class="fl">Name / Business</label><input class="fi" id="cname" placeholder="Jane Smith" oninput="render()"></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" id="cemail" placeholder="client@email.com" oninput="render()"></div>
+    <div class="st">Line Items</div>
+    <div class="items-list" id="ilist"></div>
+    <button class="add-btn" onclick="addItem()">+ Add Service</button>
+    <button class="add-btn" onclick="addCustom()" style="margin-top:5px;border-color:rgba(200,168,75,0.55);color:rgba(240,217,138,0.9)">✏️ Add Custom Line Item</button>
+    <label class="dt"><input type="checkbox" id="dtog" onchange="toggleDisc()"> Apply discount</label>
+    <div id="dr">
+      <div class="g2">
+        <div class="fg"><label class="fl">Discount Label</label><input class="fi" id="dlbl" placeholder="Retainer discount" oninput="render()"></div>
+        <div class="fg"><label class="fl">Amount ($)</label><input class="fi" id="damt" type="number" min="0" placeholder="0.00" oninput="render()"></div>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:10px"><label class="fl">Deposit Received ($)</label><input class="fi" id="dep" type="number" min="0" placeholder="0.00" oninput="render()"></div>
+    <div class="st">Notes</div>
+    <div class="fg"><textarea class="fi" id="notes" rows="3" placeholder="e.g. Revision 1 of 2 included. Files via Google Drive." oninput="render()" style="resize:vertical;line-height:1.6"></textarea></div>
+    <div class="ar">
+      <button class="btn bp" onclick="savePDF()">Print / Save PDF</button>
+      <button class="btn bs" onclick="resetForm()">Reset</button>
+    </div>
+    <button class="btn" id="sheets-btn" onclick="sendToSheets()" style="width:100%;margin-top:8px;background:rgba(66,133,244,0.15);color:#7ab3f5;border:1px solid rgba(66,133,244,0.3);letter-spacing:.1em">📊 Send to Accounting Sheet</button>
+    <div id="sheets-msg" style="margin-top:6px;font-size:10px;text-align:center;min-height:16px"></div>
+    <button class="btn" id="email-btn" onclick="sendInvoiceEmail()" style="width:100%;margin-top:8px;background:rgba(200,168,75,0.12);color:var(--gold);border:1px solid rgba(200,168,75,0.3);letter-spacing:.1em">✉️ Email Invoice to Client</button>
+    <div id="email-msg" style="margin-top:6px;font-size:10px;text-align:center;min-height:16px"></div>
+  </div>
+</aside>
+<main class="preview"><div class="doc" id="doc"></div></main>
+</div>
+<script>
+const SVC={
+  pod_starter:{l:"Podcast Editing — Starter",p:100,u:"episode",d:"Up to 60 min · Noise reduction, EQ, compression · Filler word/pause removal · Loudness normalization · MP3 + WAV"},
+  pod_growth:{l:"Podcast Editing — Growth",p:175,u:"episode",d:"Up to 90 min · Starter features + Music intro/outro · Chapter markers · Show notes outline · 2 revisions"},
+  pod_premium:{l:"Podcast Editing — Premium",p:300,u:"episode",d:"Multi-guest cleanup · Sound design · Full show notes + timestamps · Audiogram clip · 48-hr priority turnaround"},
+  pod_r4:{l:"Podcast Retainer — 4 eps/mo",p:450,u:"month",d:"4 Starter episodes/month · ~15% savings vs single rate"},
+  pod_r8:{l:"Podcast Retainer — 8 eps/mo",p:825,u:"month",d:"8 Growth episodes/month · ~20% savings vs single rate"},
+  pod_r12:{l:"Podcast Retainer — 12 eps/mo",p:1100,u:"month",d:"12 Premium episodes/month · ~25% savings vs single rate"},
+  rst_basic:{l:"Audio Restoration — Basic",p:75,u:"project",d:"Noise reduction (hiss, hum, HVAC) · Click/pop removal · Up to 10 minutes"},
+  rst_mid:{l:"Audio Restoration — Intermediate",p:200,u:"project",d:"Basic features + Room reverb reduction · Voice clarity enhancement · Up to 30 minutes"},
+  rst_full:{l:"Audio Restoration — Full Archival",p:450,u:"project",d:"Vintage recording treatment · Multi-pass processing · Written restoration report · Up to 60 minutes"},
+  med_guided:{l:"Guided Meditation Mix",p:300,u:"track",d:"Voice cleanup + binaural beat integration · Ambient music bed · Frequency-specific mastering · YouTube/Spotify delivery"},
+  med_sleep:{l:"Sleep / Ambient Soundscape",p:225,u:"track",d:"Full production from stems or scratch · Looping optimization · Frequency-targeted mastering"},
+  med_loop:{l:"Extended Loop Add-on (1–8hr)",p:75,u:"track",d:"1–8 hour looped version of any meditation or ambient track"},
+  med_ret:{l:"Wellness Content Retainer",p:700,u:"month",d:"4–8 tracks/month · Consistent sound design palette · Priority turnaround"},
+  mix_single:{l:"Music Mixing — Single Track",p:225,u:"track",d:"Up to 32 tracks · Full mix processing · 2 revisions · WAV + MP3 delivery"},
+  mix_ep:{l:"Music Mixing — EP (3–5 songs)",p:575,u:"project",d:"Consistent sound across all tracks · 3 revisions per track · Master-ready mixes"},
+  mix_album:{l:"Music Mixing — Album (6–10 songs)",p:1350,u:"project",d:"Full project rate · Session archive · Weekly progress check-ins · 3 revisions per track"},
+  mix_ext:{l:"Music Mixing — Extended (11–15 songs)",p:175,u:"track",d:"Per track rate for extended albums beyond 10 songs"},
+  add_master:{l:"Mastering",p:100,u:"track",d:"Per track, delivery-ready for all streaming platforms"},
+  add_tune:{l:"Vocal Tuning",p:75,u:"song",d:"Pitch correction per song"},
+  add_audio:{l:"Audiogram / Social Clip",p:60,u:"clip",d:"1-min waveform animation clip for social media"},
+  add_rev:{l:"Extra Revision Round",p:35,u:"round",d:"Per additional round beyond what is included in your package"},
+  add_tx:{l:"Audio Transcription",p:2,u:"minute",d:"Per minute of audio · Verbatim transcript delivered as .txt / .docx"}
+};
+const GRP=[
+  {g:"🎙️ Podcast Editing",k:["pod_starter","pod_growth","pod_premium","pod_r4","pod_r8","pod_r12"]},
+  {g:"🔧 Audio Restoration",k:["rst_basic","rst_mid","rst_full"]},
+  {g:"🧘 Meditation & Ambient",k:["med_guided","med_sleep","med_loop","med_ret"]},
+  {g:"🎚️ Music Mixing",k:["mix_single","mix_ep","mix_album","mix_ext"]},
+  {g:"➕ Add-Ons",k:["add_master","add_tune","add_audio","add_rev","add_tx"]}
+];
+let items=[],nid=0;
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtI=d=>d.toISOString().split('T')[0];
+const fmtD=s=>{if(!s)return'—';const[y,m,d]=s.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+parseInt(d)+', '+y};
+window.onload=()=>{
+  const t=new Date(),u=new Date(t);u.setDate(u.getDate()+14);
+  $('idate').value=fmtI(t);$('idue').value=fmtI(u);$('inum').value='LSW-0085';
+  addItem();render();
+};
+function buildSel(id,sel){
+  let h=`<select class="fi" style="font-size:10px" onchange="upd(${id},'k',this.value)"><option value="">— Select a service —</option>`;
+  for(const g of GRP){h+=`<optgroup label="${g.g}">`;for(const k of g.k){const s=SVC[k];h+=`<option value="${k}"${k===sel?' selected':''}>${s.l} — ${fmt(s.p)} / ${s.u}</option>`;}h+=`</optgroup>`;}
+  h+=`<optgroup label="✏️ Custom"><option value="__custom__">✏️ Custom / One-off Service</option></optgroup>`;
+  return h+'</select>';
+}
+function drawItems(){
+  $('ilist').innerHTML=items.map(it=>{
+    const s=SVC[it.k]||{p:0,u:'',d:''};
+    const p=it.op!==null?it.op:s.p;
+    const tot=p*it.q;
+    const isC=it.k==='__custom__';
+    return`<div class="ic" style="${isC?'border-color:rgba(200,168,75,0.4)':''}">
+      <button class="rb" onclick="rem(${it.id})">✕</button>
+      <div class="fl" style="${isC?'color:var(--gold2)':''}">Service${isC?' — Custom':''}</div>${buildSel(it.id,it.k)}
+      ${isC?`<div style="margin-top:6px"><div class="fl">Service Name <span style="color:var(--gold)">*</span></div>
+      <input class="fi" style="font-size:10px" placeholder="e.g. Podcast Consultation, Mix Revision…" value="${it.cl}" oninput="upd(${it.id},'cl',this.value)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <div><div class="fl" style="margin-top:4px">Unit Label</div><input class="fi" style="font-size:10px" placeholder="hour, session, project" value="${it.cu}" oninput="upd(${it.id},'cu',this.value)"></div>
+        <div></div>
+      </div>`:''}
+      <div style="margin-top:6px"><div class="fl">${isC?'Description':'Description override (optional)'}</div>
+      <input class="fi" style="font-size:10px" placeholder="${isC?'Describe the service or deliverable…':s.d||'Custom description…'}" value="${it.cd}" oninput="upd(${it.id},'d',this.value)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <div><div class="fl" style="margin-top:4px">Qty</div><input class="fi" type="number" min="0.5" step="0.5" value="${it.q}" oninput="upd(${it.id},'q',this.value)"></div>
+        <div><div class="fl" style="margin-top:4px">Price ($)${isC?' <span style=\"color:var(--gold)\">*</span>':''}</div><input class="fi" type="number" min="0" placeholder="0.00" value="${it.op!==null?it.op:(it.k&&!isC?s.p:'')}" oninput="upd(${it.id},'p',this.value)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.08em">LINE TOTAL</span>
+        <span class="ia" id="lt-${it.id}">${fmt(tot)}</span>
+      </div></div>`;
+  }).join('');
+}
+function addItem(){const id=nid++;items.push({id,k:'',q:1,op:null,cd:'',cl:'',cu:''});drawItems();render();}
+function addCustom(){const id=nid++;items.push({id,k:'__custom__',q:1,op:0,cd:'',cl:'',cu:'unit'});drawItems();render();}
+function rem(id){items=items.filter(i=>i.id!==id);drawItems();render();}
+function upd(id,f,v){
+  const it=items.find(i=>i.id===id);if(!it)return;
+  if(f==='k'){
+    it.k=v;it.op=(v==='__custom__')?0:null;it.cl='';it.cu=(v==='__custom__')?'unit':'';
+    drawItems();render();
+  } else if(f==='q'){
+    it.q=parseFloat(v)||1;
+    refreshLineTotal(it);render();
+  } else if(f==='p'){
+    it.op=v===''?null:parseFloat(v);
+    refreshLineTotal(it);render();
+  } else if(f==='d'){it.cd=v;render();}
+  else if(f==='cl'){it.cl=v;render();}
+  else if(f==='cu'){it.cu=v;render();}
+}
+function refreshLineTotal(it){
+  const s=SVC[it.k]||{p:0};
+  const p=it.op!==null?it.op:s.p;
+  const tot=p*it.q;
+  const el=document.getElementById('lt-'+it.id);
+  if(el)el.textContent=fmt(tot);
+}
+function toggleDisc(){$('dr').style.display=$('dtog').checked?'block':'none';render();}
+function resetForm(){
+  if(!confirm('Reset invoice?'))return;
+  ['inum','cname','cemail','notes','damt','dlbl','dep'].forEach(i=>$(i).value='');
+  $('istat').value='unpaid';$('dtog').checked=false;$('dr').style.display='none';
+  items=[];nid=0;addItem();render();
+}
+function render(){
+  const num=$('inum').value||'LSW-0085';
+  const stat=$('istat').value;
+  const cn=$('cname').value,ce=$('cemail').value;
+  const notes=$('notes').value;
+  const disc=parseFloat($('damt').value)||0;
+  const dlbl=$('dlbl').value||'Discount';
+  const dep=parseFloat($('dep').value)||0;
+  const showD=$('dtog').checked;
+  let sub=0;
+  items.forEach(it=>{const s=SVC[it.k]||{p:0};sub+=(it.op!==null?it.op:s.p)*it.q;});
+  const inv=sub-(showD?disc:0),bal=inv-dep;
+  const sl={unpaid:'UNPAID',partial:'PARTIAL',paid:'PAID'};
+  const sc={unpaid:'su',partial:'sp',paid:'sk'};
+  const rows=items.filter(i=>i.k).map(it=>{
+    const isC=it.k==='__custom__';
+    const s=isC?{p:0,u:'',d:'',l:''}:SVC[it.k];
+    const p=it.op!==null?it.op:s.p;const tot=p*it.q;
+    const desc=it.cd||(isC?'':s.d);
+    const label=isC?(it.cl||'Custom Service'):s.l;
+    const unit=isC?(it.cu||''):s.u;
+    return`<tr><td><div class="ts">${label}</div>${desc?`<div class="td">${desc}</div>`:''}</td><td>${fmt(p)}</td><td>${it.q}${unit?' '+unit:''}</td><td>${fmt(tot)}</td></tr>`;
+  }).join('')||`<tr><td colspan="4" class="es">Select a service from the left panel</td></tr>`;
+  $('doc').innerHTML=`
+    <div class="dh">
+      <div><div class="db">Lucid Sound Work</div><div class="dbs">Professional Audio Services</div></div>
+      <div><div class="dtw">Invoice</div><div class="dn">${num}</div></div>
+    </div>
+    <div class="dm">
+      <div class="dmi"><div class="ml">Invoice Date</div><div class="mv">${fmtD($('idate').value)}</div></div>
+      <div class="dmi"><div class="ml">Due Date</div><div class="mv">${fmtD($('idue').value)}</div></div>
+      <div class="dmi"><div class="ml">Status</div><div class="mv"><span class="sb ${sc[stat]}">${sl[stat]}</span></div></div>
+    </div>
+    <div class="dp">
+      <div><div class="pl">From</div><div class="pn">Lucid Sound Work</div><div class="pd">lucidsoundwork.com<br>admin@lucidsoundwork.com<br>Chicago, IL</div></div>
+      <div><div class="pl">Bill To</div><div class="pn ${cn?'':'ph2'}">${cn||'[Client Name]'}</div><div class="pd ${ce?'':'ph2'}">${ce||'[Client Email]'}</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th style="width:52%">Service / Description</th><th>Rate</th><th>Qty</th><th>Amount</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="tot"><div class="tb">
+      <div class="tr"><span class="tl">Subtotal</span><span class="tv">${fmt(sub)}</span></div>
+      ${showD&&disc>0?`<div class="tr"><span class="tl">${dlbl}</span><span class="tv" style="color:var(--green)">− ${fmt(disc)}</span></div>`:''}
+      <div class="tr"><span class="tl">Invoice Total</span><span class="tv">${fmt(inv)}</span></div>
+      ${dep>0?`<div class="tr dr2"><span class="tl">Deposit Received</span><span class="tv">− ${fmt(dep)}</span></div>`:''}
+      <div class="tr tf"><span class="tl">Balance Due</span><span class="tv">${fmt(bal)}</span></div>
+    </div></div>
+    <div class="fg2">
+      <div class="fb"><div class="ft">Payment Methods</div><div class="fbd">PayPal: admin@lucidsoundwork.com<br>Venmo: @[YourVenmo]<br>Cash App: $[YourCashApp]<br>Zelle: admin@lucidsoundwork.com</div></div>
+      <div class="fb"><div class="ft">Payment Terms</div><div class="fbd">50% deposit required before work begins<br>Balance due upon delivery of final files<br>Retainers billed on the 1st of each month<br>Late payments: $25 fee after 7 days</div></div>
+    </div>
+    ${notes?`<div style="padding:16px 24px;border-top:1px solid var(--paper3)"><div class="ft">Notes</div><div style="font-size:10px;color:var(--ink2);line-height:1.7;font-style:italic">${notes}</div></div>`:''}
+    <div class="bar">Lucid Sound Work &nbsp;·&nbsp; admin@lucidsoundwork.com &nbsp;·&nbsp; Chicago, IL &nbsp;·&nbsp; Thank you for your business.</div>`;
+}
+
+function slugify(s){
+  return s.trim().replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-');
+}
+function savePDF(){
+  const num=$('inum').value||'LSW-0085';
+  const client=slugify($('cname').value||'Client');
+  const filename='LSW-Invoice-'+num+'-'+client+'.pdf';
+  // Set the document title — browsers use this as the default PDF filename
+  const prev=document.title;
+  document.title=filename;
+  window.print();
+  // Restore after a short delay (print dialog is synchronous on most browsers)
+  setTimeout(()=>{document.title=prev;},2000);
+}
+
+// ── GOOGLE SHEETS SYNC ────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsXUa2sJ9OIbuoXd0nIyn2CZTUJVcxQYwZSaYY3QP6ql4GfoU8fL3qjMjoYWrLe36-JQ/exec';
+
+function sheetsMsg(txt, color){
+  const el=$('sheets-msg');
+  el.textContent=txt;
+  el.style.color=color||'rgba(255,255,255,0.5)';
+}
+
+async function sendToSheets(){
+  const btn=$('sheets-btn');
+
+  // ── Gather invoice data ──────────────────────────────────────────────────
+  const num    = $('inum').value  || 'LSW-0085';
+  const date   = $('idate').value || '';
+  const client = $('cname').value || '';
+  const dep    = parseFloat($('dep').value)  || 0;
+  const discAmt= parseFloat($('damt').value) || 0;
+  const showD  = $('dtog').checked;
+  const status = {unpaid:'UNPAID',partial:'PARTIAL',paid:'PAID'}[$('istat').value];
+
+  if(!client){sheetsMsg('⚠ Add a client name first.','#f5a623');return;}
+  if(!date)  {sheetsMsg('⚠ Add an invoice date first.','#f5a623');return;}
+  if(!items.filter(i=>i.k).length){sheetsMsg('⚠ Add at least one service.','#f5a623');return;}
+
+  // Build one row per service line item
+  const clientEmail = $('cemail').value.trim();
+  const discount    = showD ? discAmt : 0;
+
+  // Calculate invoice totals (shared across all rows)
+  let subtotal = 0;
+  items.filter(i=>i.k).forEach(it=>{
+    const isC=it.k==='__custom__';
+    const s=isC?{p:0}:SVC[it.k];
+    const p=it.op!==null?it.op:s.p;
+    subtotal+=p*it.q;
+  });
+  const invTotal   = subtotal - discount;
+  const balanceDue = invTotal - dep;
+
+  // Build one row per line item
+  // Each row: A:num B:date C:client D:email E:svcType F:desc
+  //           G:lineTotal H:discount(first row only) I:invTotal(first row only)
+  //           J:deposit(first row only) K:balance(first row only) L:datePaid M:status
+  const incomeRows = items.filter(i=>i.k).map((it, idx)=>{
+    const isC  = it.k==='__custom__';
+    const s    = isC?{p:0,u:'',l:''}:SVC[it.k];
+    const p    = it.op!==null?it.op:s.p;
+    const lineTotal = p*it.q;
+    const label= isC?(it.cl||'Custom Service'):s.l;
+    const qty  = it.q>1?' x'+it.q:'';
+    let svcType='Add-On Only';
+    if(it.k.startsWith('pod'))     svcType='Podcast Editing';
+    else if(it.k.startsWith('rst'))svcType='Audio Restoration';
+    else if(it.k.startsWith('med'))svcType='Meditation/Ambient';
+    else if(it.k.startsWith('mix'))svcType='Music Mixing';
+    else if(isC)                   svcType='Custom';
+    // Only first row carries invoice-level totals; others get 0 to avoid double-counting
+    const isFirst = idx===0;
+    return [
+      num, date, client, clientEmail, svcType, label+qty,
+      lineTotal,
+      isFirst ? discount : 0,
+      isFirst ? invTotal : 0,
+      isFirst ? dep      : 0,
+      isFirst ? balanceDue : 0,
+      '', status
+    ];
+  });
+
+  btn.disabled=true;
+  btn.textContent='Sending…';
+  sheetsMsg('Connecting to Google Sheets…','rgba(255,255,255,0.4)');
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ incomeRows })
+    });
+
+    // Apps Script always returns 200 — parse the JSON body for status
+    const data = await res.json();
+
+    if(data.status === 'ok'){
+      const rowsWritten = data.rowsWritten || 1;
+      const msg = '✓ Added to Income Tracker (' + rowsWritten + ' row' + (rowsWritten>1?'s':'') + ')';
+      sheetsMsg(msg,'#7dbb8a');
+      incrementInvoiceNumber();
+      btn.style.background='rgba(66,183,100,0.15)';
+      btn.style.color='#7dbb8a';
+      btn.style.borderColor='rgba(66,183,100,0.35)';
+      setTimeout(()=>{
+        btn.style.background='rgba(66,133,244,0.15)';
+        btn.style.color='#7ab3f5';
+        btn.style.borderColor='rgba(66,133,244,0.3)';
+        sheetsMsg('','');
+      },5000);
+    } else {
+      throw new Error(data.message||'Unknown error from Apps Script');
+    }
+
+  } catch(err){
+    console.error(err);
+    // CORS: Apps Script redirects cause fetch to fail even on success — check if it went through
+    if(err.message.includes('Failed to fetch')||err.message.includes('NetworkError')||err.message.includes('CORS')){
+      sheetsMsg('✓ Sent — check your sheet to confirm it landed','#f5a623');
+      incrementInvoiceNumber();
+    } else {
+      sheetsMsg('✗ Error: '+err.message,'#e07070');
+    }
+  } finally {
+    btn.disabled=false;
+    btn.textContent='📊 Send to Accounting Sheet';
+  }
+}
+
+// ── EMAILJS INVOICE SENDER ────────────────────────────────────────────────────
+const EMAILJS_SERVICE_ID  = 'service_aqnl6vp';
+const EMAILJS_TEMPLATE_ID = 'template_v77eyk1';
+
+function emailMsg(txt, color){
+  const el = $('email-msg');
+  el.textContent = txt;
+  el.style.color = color || 'rgba(255,255,255,0.5)';
+}
+
+async function sendInvoiceEmail(){
+  const btn = $('email-btn');
+  const ce  = $('cemail').value.trim();
+  const cn  = $('cname').value.trim();
+
+  if(!ce){ emailMsg('⚠ Add a client email first.','#f5a623'); return; }
+  if(!cn){ emailMsg('⚠ Add a client name first.','#f5a623'); return; }
+  if(!items.filter(i=>i.k).length){ emailMsg('⚠ Add at least one service.','#f5a623'); return; }
+
+  // Build line items
+  const lineItems = items.filter(i=>i.k).map(it=>{
+    const isC = it.k==='__custom__';
+    const s   = isC ? {p:0,u:'',l:''} : SVC[it.k];
+    const p   = it.op!==null ? it.op : s.p;
+    const tot = p * it.q;
+    const lbl = isC ? (it.cl||'Custom Service') : s.l;
+    const unit= isC ? (it.cu||'') : s.u;
+    return `${lbl}${it.q>1?' (x'+it.q+(unit?' '+unit:'')+')':(unit?' / '+unit:'')}  →  ${fmt(tot)}`;
+  }).join('\n');
+
+  // Totals
+  const showD   = $('dtog').checked;
+  const disc    = showD ? (parseFloat($('damt').value)||0) : 0;
+  const dlbl    = $('dlbl').value || 'Discount';
+  const dep     = parseFloat($('dep').value)||0;
+  const sub     = items.filter(i=>i.k).reduce((a,it)=>{
+    const s=SVC[it.k]||{p:0}; return a+(it.op!==null?it.op:s.p)*it.q;
+  },0);
+  const invTotal = sub - disc;
+  const balance  = invTotal - dep;
+
+  const params = {
+    to_email:      ce,
+    client_name:   cn,
+    invoice_num:   $('inum').value || 'LSW-0085',
+    invoice_date:  fmtD($('idate').value),
+    due_date:      fmtD($('idue').value),
+    status:        $('istat').value.toUpperCase(),
+    line_items:    lineItems,
+    subtotal:      fmt(sub),
+    discount_line: disc>0 ? `${dlbl}: − ${fmt(disc)}` : '',
+    deposit:       fmt(dep),
+    balance_due:   fmt(balance),
+    notes:         $('notes').value || 'None'
+  };
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  emailMsg('Sending invoice email…','rgba(255,255,255,0.4)');
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
+    emailMsg('✓ Invoice emailed to '+ce,'#7dbb8a');
+    btn.style.background   = 'rgba(66,183,100,0.15)';
+    btn.style.color        = '#7dbb8a';
+    btn.style.borderColor  = 'rgba(66,183,100,0.35)';
+    setTimeout(()=>{
+      btn.style.background  = 'rgba(200,168,75,0.12)';
+      btn.style.color       = 'var(--gold)';
+      btn.style.borderColor = 'rgba(200,168,75,0.3)';
+      emailMsg('','');
+    }, 5000);
+  } catch(e){
+    console.error(e);
+    emailMsg('✗ Failed: '+(e.text||e.message||'Unknown error'),'#e07070');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✉️ Email Invoice to Client';
+  }
+}
+
+function incrementInvoiceNumber(){
+  const field = $('inum');
+  const val = field.value || 'LSW-0085';
+  // Match pattern like LSW-0085 — extract prefix and number
+  const match = val.match(/^(.*?)(\d+)$/);
+  if(match){
+    const prefix = match[1];
+    const num    = parseInt(match[2], 10);
+    const padded = String(num + 1).padStart(match[2].length, '0');
+    field.value  = prefix + padded;
+  }
+  render();
+}
+</script>
+</body>
+</html>

@@ -400,8 +400,8 @@ function render(){
 
   $('doc').innerHTML=`
     <div class="dh">
-      <div><img src="https://raw.githubusercontent.com/BLKVEDA/Scripts/main/LSW%20white%20logo.png" alt="Lucid Sound Work" style="height:42px;width:auto;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="db" style="display:none">Lucid Sound Work</div></div>
-      <div><div class="dtw">Invoice</div><div class="dn">${num}</div></div>
+      <div><img src="https://raw.githubusercontent.com/BLKVEDA/Scripts/main/LSW%20white%20logo.png" alt="Lucid Sound Work" style="height:76px;width:auto;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="db" style="display:none">Lucid Sound Work</div></div>
+      <div><div class="dtw" style="font-size:14px">Invoice</div><div class="dn">${num}</div></div>
     </div>
     <div class="dm" style="${stat==='paid'?'grid-template-columns:1fr 1fr':''}">
       <div class="dmi"><div class="ml">Invoice Date</div><div class="mv">${fmtD($('idate').value)}</div></div>

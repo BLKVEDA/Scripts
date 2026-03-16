@@ -126,12 +126,21 @@ tbody td:last-child{font-weight:500}
     <div class="rush-block" id="rush-block">
       <div class="fl" style="color:rgba(224,112,112,0.7);margin-bottom:8px">Rush Fee — requires written confirmation & 100% upfront payment</div>
       <div class="fg">
+        <label class="fl">Service Type</label>
+        <select class="fi" id="rush-svc" onchange="updateRushTiers()" style="border-color:rgba(184,50,50,0.3)">
+          <option value="">— Select service type —</option>
+          <option value="podcast">Podcast Editing (std: 3–5 days)</option>
+          <option value="mixing">Music Mixing (std: 5–7 days)</option>
+          <option value="mastering">Mastering (std: 2–3 days)</option>
+          <option value="restoration">Audio Restoration (std: 3–5 days)</option>
+          <option value="meditation">Meditation / Binaural (std: 5–7 days)</option>
+          <option value="subliminal">Subliminal / Theta (std: 5–7 days)</option>
+        </select>
+      </div>
+      <div class="fg">
         <label class="fl">Rush Tier</label>
         <select class="fi" id="rush-tier" onchange="render()" style="border-color:rgba(184,50,50,0.3)">
-          <option value="0">— Select rush tier —</option>
-          <option value="0.25">25–50% of standard turnaround (+25%)</option>
-          <option value="0.50">Under 25% of standard turnaround (+50%)</option>
-          <option value="0.75">Same-day / under 12 hours (+75%)</option>
+          <option value="0">— Select service type first —</option>
         </select>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
@@ -208,6 +217,51 @@ function calcSubtotal(){
   let sub=0;
   items.forEach(it=>{const s=SVC[it.k]||{p:0};sub+=(it.op!==null?it.op:s.p)*it.q;});
   return sub;
+}
+const RUSH_TIERS={
+  podcast:[
+    {v:'0',l:'— Select delivery window —'},
+    {v:'0.25',l:'2 days (std: 3–5 days) — +25%'},
+    {v:'0.50',l:'Next day / 24 hrs (std: 3–5 days) — +50%'},
+    {v:'0.75',l:'Same day / under 12 hrs — +75%'}
+  ],
+  mixing:[
+    {v:'0',l:'— Select delivery window —'},
+    {v:'0.25',l:'3–4 days (std: 5–7 days) — +25%'},
+    {v:'0.50',l:'2 days (std: 5–7 days) — +50%'},
+    {v:'0.75',l:'Same day / under 12 hrs — +75%'}
+  ],
+  mastering:[
+    {v:'0',l:'— Select delivery window —'},
+    {v:'0.25',l:'Next day / 24 hrs (std: 2–3 days) — +25%'},
+    {v:'0.50',l:'Under 12 hrs (std: 2–3 days) — +50%'},
+    {v:'0.75',l:'Same day / under 4 hrs — +75%'}
+  ],
+  restoration:[
+    {v:'0',l:'— Select delivery window —'},
+    {v:'0.25',l:'2 days (std: 3–5 days) — +25%'},
+    {v:'0.50',l:'Next day / 24 hrs (std: 3–5 days) — +50%'},
+    {v:'0.75',l:'Same day / under 12 hrs — +75%'}
+  ],
+  meditation:[
+    {v:'0',l:'— Select delivery window —'},
+    {v:'0.25',l:'3–4 days (std: 5–7 days) — +25%'},
+    {v:'0.50',l:'2 days (std: 5–7 days) — +50%'},
+    {v:'0.75',l:'Same day / under 12 hrs — +75%'}
+  ],
+  subliminal:[
+    {v:'0',l:'— Select delivery window —'},
+    {v:'0.25',l:'3–4 days (std: 5–7 days) — +25%'},
+    {v:'0.50',l:'2 days (std: 5–7 days) — +50%'},
+    {v:'0.75',l:'Same day / under 12 hrs — +75%'}
+  ]
+};
+function updateRushTiers(){
+  const svc=$('rush-svc').value;
+  const sel=$('rush-tier');
+  const tiers=RUSH_TIERS[svc]||[{v:'0',l:'— Select service type first —'}];
+  sel.innerHTML=tiers.map(t=>`<option value="${t.v}">${t.l}</option>`).join('');
+  render();
 }
 function toggleRush(){
   rushOpen=!rushOpen;
@@ -292,7 +346,8 @@ function resetForm(){
   $('rush-block').classList.remove('open');
   $('rush-toggle-btn').classList.remove('active');
   $('rush-toggle-btn').textContent='⚡ Add Rush Fee';
-  $('rush-tier').value='0';
+  $('rush-svc').value='';
+  $('rush-tier').innerHTML='<option value="0">— Select service type first —</option>';
   $('rush-fee-display').textContent='$0.00';
   items=[];nid=0;addItem();render();
 }
@@ -318,13 +373,15 @@ function render(){
   const sl={unpaid:'UNPAID',partial:'PARTIAL',paid:'PAID'};
   const sc={unpaid:'su',partial:'sp',paid:'sk'};
 
-  // Rush label for invoice
-  const rushLabels={
-    '0.25':'Rush Fee (+25%) — 25–50% of standard turnaround',
-    '0.50':'Rush Fee (+50%) — Under 25% of standard turnaround',
-    '0.75':'Rush Fee (+75%) — Same-day / under 12 hours'
-  };
-  const rushTierKey=($('rush-tier').value)||'0';
+  // Rush label for invoice — pull from selected option text
+  const rushTierEl=$('rush-tier');
+  const rushTierKey=rushTierEl.value||'0';
+  const rushTierText=rushTierEl.options[rushTierEl.selectedIndex]
+    ?rushTierEl.options[rushTierEl.selectedIndex].text.replace(/—.*/,'').trim()
+    :'Rush Delivery';
+  const rushSvcText=$('rush-svc').options[$('rush-svc').selectedIndex]
+    ?$('rush-svc').options[$('rush-svc').selectedIndex].text.replace(/\(.*\)/,'').trim()
+    :'';
 
   const rows=items.filter(i=>i.k).map(it=>{
     const isC=it.k==='__custom__';
@@ -338,7 +395,7 @@ function render(){
 
   // Rush fee row for invoice table
   const rushRow=(rushOpen&&rushAmt>0)
-    ?`<tr style="background:#fff8f8"><td><div class="ts" style="color:#b83232">⚡ ${rushLabels[rushTierKey]||'Rush Fee'}</div><div class="td" style="color:#c97070">100% upfront · 1 revision round · Availability confirmed in writing</div></td><td style="color:#b83232">${Math.round(rushMult*100)}%</td><td>of subtotal</td><td style="color:#b83232">${fmt(rushAmt)}</td></tr>`
+    ?`<tr style="background:#fff8f8"><td><div class="ts" style="color:#b83232">⚡ Rush Fee (+${Math.round(rushMult*100)}%) — ${rushSvcText}</div><div class="td" style="color:#c97070">Delivery: ${rushTierText} · 100% upfront · 1 revision round</div></td><td style="color:#b83232">${Math.round(rushMult*100)}%</td><td>of subtotal</td><td style="color:#b83232">${fmt(rushAmt)}</td></tr>`
     :'';
 
   $('doc').innerHTML=`
@@ -528,9 +585,12 @@ async function sendInvoiceEmail(){
   const balance  = invTotal - dep;
 
   // Append rush fee to line items string if applicable
-  const rushLabels={'0.25':'+25%','0.50':'+50%','0.75':'+75%'};
+  const emailRushTierEl=$('rush-tier');
+  const emailRushTierText=emailRushTierEl.options[emailRushTierEl.selectedIndex]
+    ?emailRushTierEl.options[emailRushTierEl.selectedIndex].text.replace(/—.*/,'').trim()
+    :'Rush Delivery';
   const rushLine = (rushOpen&&rushAmt>0)
-    ? `\n⚡ Rush Fee (${rushLabels[$('rush-tier').value]||''})  →  ${fmt(rushAmt)}`
+    ? `\n⚡ Rush Fee (+${Math.round(getRushMultiplier()*100)}%) — ${emailRushTierText}  →  ${fmt(rushAmt)}`
     : '';
 
   const params = {

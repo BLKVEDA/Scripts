@@ -428,7 +428,7 @@ function render(){
       <div class="fb"><div class="ft">Payment Methods</div><div class="fbd">PayPal: admin@lucidsoundwork.com<br>Venmo: @[YourVenmo]<br>Cash App: $[YourCashApp]<br>Zelle: admin@lucidsoundwork.com</div></div>
       <div class="fb"><div class="ft">Payment Terms</div><div class="fbd">${rushOpen&&rushAmt>0?'<strong style="color:#b83232">⚡ RUSH PROJECT — 100% payment required upfront</strong><br>1 revision round included<br>':'50% deposit required before work begins<br>Balance due upon delivery of final files<br>'}Retainers billed on the 1st of each month<br>Late payments: $25 fee after 7 days</div></div>
     </div>
-    ${d.notes?`<div style="padding:16px 24px;border-top:1px solid var(--paper3)"><div class="ft">Notes</div><div style="font-size:10px;color:var(--ink2);line-height:1.7;font-style:italic">${d.notes}</div></div>`:''}
+    ${notes?`<div style="padding:16px 24px;border-top:1px solid var(--paper3)"><div class="ft">Notes</div><div style="font-size:10px;color:var(--ink2);line-height:1.7;font-style:italic">${notes}</div></div>`:''}
     <div class="bar">Lucid Sound Work &nbsp;·&nbsp; admin@lucidsoundwork.com &nbsp;·&nbsp; Chicago, IL &nbsp;·&nbsp; Thank you for your business.</div>`;
 }
 

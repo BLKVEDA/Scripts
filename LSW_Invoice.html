@@ -89,7 +89,8 @@ tbody td:last-child{font-weight:500}
 .ft{font-family:'Syne',sans-serif;font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
 .fbd{font-size:10px;color:var(--ink2);line-height:1.8}
 .bar{background:var(--paper2);padding:12px 40px;text-align:center;font-size:9px;color:var(--ink3);letter-spacing:.08em;border-top:1px solid var(--paper3)}
-@media print{.panel{display:none}.wrap{grid-template-columns:1fr}.preview{padding:0}.doc{box-shadow:none}}
+@media print{.panel{display:none}.wrap{grid-template-columns:1fr}.preview{padding:0}.doc{box-shadow:none}.logo-screen{display:none!important}.logo-print{display:block!important}.dh{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+.logo-print{display:none}
 </style>
 </head>
 <body>
@@ -400,7 +401,10 @@ function render(){
 
   $('doc').innerHTML=`
     <div class="dh">
-      <div><img src="https://raw.githubusercontent.com/BLKVEDA/Scripts/main/LSW%20white%20logo.png" alt="Lucid Sound Work" style="height:76px;width:auto;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="db" style="display:none">Lucid Sound Work</div></div>
+      <div>
+        <img class="logo-screen" src="https://raw.githubusercontent.com/BLKVEDA/Scripts/main/LSW%20white%20logo.png" alt="Lucid Sound Work" style="height:76px;width:auto;display:block" onerror="this.style.display='none'">
+        <img class="logo-print" src="https://raw.githubusercontent.com/BLKVEDA/Scripts/main/LSW%20main%20LOGO4x.png" alt="Lucid Sound Work" style="height:76px;width:auto;display:none" onerror="this.style.display='none'">
+      </div>
       <div><div class="dtw" style="font-size:14px">Invoice</div><div class="dn">${num}</div></div>
     </div>
     <div class="dm" style="${stat==='paid'?'grid-template-columns:1fr 1fr':''}">

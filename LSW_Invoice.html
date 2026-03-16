@@ -492,15 +492,16 @@ async function sendToSheets(){
     else if(isC)                   svcType='Custom';
     const isFirst = idx===0;
     return [
-      num, date, client, clientEmail, svcType, label+qty,
-      lineTotal,
-      isFirst ? discount  : 0,
-      isFirst ? invTotal  : 0,
-      isFirst ? dep       : 0,
-      isFirst ? balanceDue: 0,
-      '', status,
-      isFirst ? rushAmt   : 0,   // N: Rush Fee Amount
-      isFirst ? (rushMult>0 ? Math.round(rushMult*100)+'%' : '') : ''  // O: Rush Multiplier
+      num, date, client, clientEmail, svcType, label+qty,  // A–F
+      isFirst ? rushAmt   : 0,                              // G: Rush Fee Amount
+      isFirst ? (rushMult>0 ? Math.round(rushMult*100)+'%' : '') : '',  // H: Rush Multiplier
+      lineTotal,                                            // I: Line Total
+      isFirst ? discount  : 0,                              // J: Discount
+      isFirst ? invTotal  : 0,                              // K: Invoice Total
+      isFirst ? dep       : 0,                              // L: Deposit
+      isFirst ? balanceDue: 0,                              // M: Balance Due
+      '',                                                   // N: Date Paid
+      status                                                // O: Status
     ];
   });
 

@@ -32,6 +32,11 @@ body{background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);mi
 .ia{background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.2);color:var(--gold2);font-family:'DM Mono',monospace;font-size:11px;padding:7px 10px;border-radius:var(--r);text-align:right;font-weight:500}
 .add-btn{width:100%;padding:10px;background:rgba(200,168,75,0.08);border:1px dashed rgba(200,168,75,0.3);color:var(--gold);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;cursor:pointer;border-radius:var(--r);transition:.2s;text-transform:uppercase;margin-top:10px}
 .add-btn:hover{background:rgba(200,168,75,0.15);border-color:var(--gold)}
+.rush-btn{width:100%;padding:10px;background:rgba(184,50,50,0.08);border:1px dashed rgba(184,50,50,0.35);color:#e07070;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;cursor:pointer;border-radius:var(--r);transition:.2s;text-transform:uppercase;margin-top:5px}
+.rush-btn:hover{background:rgba(184,50,50,0.15);border-color:#e07070}
+.rush-btn.active{background:rgba(184,50,50,0.18);border-style:solid;border-color:#e07070;color:#f5a5a5}
+.rush-block{display:none;background:rgba(184,50,50,0.06);border:1px solid rgba(184,50,50,0.2);border-radius:var(--r);padding:12px;margin-top:8px}
+.rush-block.open{display:block}
 .dt{display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:10px;color:rgba(255,255,255,0.4);user-select:none}
 .dt input{accent-color:var(--gold)}
 .dt:hover{color:rgba(255,255,255,0.7)}
@@ -78,6 +83,7 @@ tbody td:last-child{font-weight:500}
 .tf .tl,.tf .tv{color:var(--white);font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
 .tf .tv{color:var(--gold)}
 .dr2 .tv{color:var(--green)}
+.rush-row .tv{color:#e07070}
 .fg2{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--paper3)}
 .fb{padding:20px 24px;border-right:1px solid var(--paper3)}.fb:last-child{border-right:none}
 .ft{font-family:'Syne',sans-serif;font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
@@ -116,6 +122,24 @@ tbody td:last-child{font-weight:500}
     <div class="items-list" id="ilist"></div>
     <button class="add-btn" onclick="addItem()">+ Add Service</button>
     <button class="add-btn" onclick="addCustom()" style="margin-top:5px;border-color:rgba(200,168,75,0.55);color:rgba(240,217,138,0.9)">✏️ Add Custom Line Item</button>
+    <button class="rush-btn" id="rush-toggle-btn" onclick="toggleRush()">⚡ Add Rush Fee</button>
+    <div class="rush-block" id="rush-block">
+      <div class="fl" style="color:rgba(224,112,112,0.7);margin-bottom:8px">Rush Fee — requires written confirmation & 100% upfront payment</div>
+      <div class="fg">
+        <label class="fl">Rush Tier</label>
+        <select class="fi" id="rush-tier" onchange="render()" style="border-color:rgba(184,50,50,0.3)">
+          <option value="0">— Select rush tier —</option>
+          <option value="0.25">25–50% of standard turnaround (+25%)</option>
+          <option value="0.50">Under 25% of standard turnaround (+50%)</option>
+          <option value="0.75">Same-day / under 12 hours (+75%)</option>
+        </select>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.08em">RUSH FEE TOTAL</span>
+        <span class="ia" id="rush-fee-display" style="border-color:rgba(184,50,50,0.3);color:#e07070">$0.00</span>
+      </div>
+      <div style="font-size:9px;color:rgba(224,112,112,0.5);margin-top:8px;line-height:1.6">⚠ 100% upfront · 1 revision round · 2-hr file delivery window</div>
+    </div>
     <label class="dt"><input type="checkbox" id="dtog" onchange="toggleDisc()"> Apply discount</label>
     <div id="dr">
       <div class="g2">
@@ -170,15 +194,32 @@ const GRP=[
   {g:"🎚️ Music Mixing",k:["mix_single","mix_ep","mix_album","mix_ext"]},
   {g:"➕ Add-Ons",k:["add_master","add_tune","add_audio","add_rev","add_tx"]}
 ];
-let items=[],nid=0;
+let items=[],nid=0,rushOpen=false;
 const $=id=>document.getElementById(id);
 const fmt=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtI=d=>d.toISOString().split('T')[0];
 const fmtD=s=>{if(!s)return'—';const[y,m,d]=s.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+parseInt(d)+', '+y};
+
+function getRushMultiplier(){
+  if(!rushOpen)return 0;
+  return parseFloat($('rush-tier').value)||0;
+}
+function calcSubtotal(){
+  let sub=0;
+  items.forEach(it=>{const s=SVC[it.k]||{p:0};sub+=(it.op!==null?it.op:s.p)*it.q;});
+  return sub;
+}
+function toggleRush(){
+  rushOpen=!rushOpen;
+  $('rush-block').classList.toggle('open',rushOpen);
+  $('rush-toggle-btn').classList.toggle('active',rushOpen);
+  $('rush-toggle-btn').textContent=rushOpen?'⚡ Remove Rush Fee':'⚡ Add Rush Fee';
+  render();
+}
+
 window.onload=()=>{
   const t=new Date(),u=new Date(t);u.setDate(u.getDate()+14);
   $('idate').value=fmtI(t);$('idue').value=fmtI(u);
-  // Read ?inum= from URL if opened from Sheets link, otherwise use fallback
   const params=new URLSearchParams(window.location.search);
   $('inum').value=params.get('inum')||'LSW-0085';
   addItem();render();
@@ -246,6 +287,13 @@ function resetForm(){
   if(!confirm('Reset invoice?'))return;
   ['inum','cname','cemail','notes','damt','dlbl','dep'].forEach(i=>$(i).value='');
   $('istat').value='unpaid';$('dtog').checked=false;$('dr').style.display='none';
+  // reset rush
+  rushOpen=false;
+  $('rush-block').classList.remove('open');
+  $('rush-toggle-btn').classList.remove('active');
+  $('rush-toggle-btn').textContent='⚡ Add Rush Fee';
+  $('rush-tier').value='0';
+  $('rush-fee-display').textContent='$0.00';
   items=[];nid=0;addItem();render();
 }
 function render(){
@@ -257,11 +305,27 @@ function render(){
   const dlbl=$('dlbl').value||'Discount';
   const dep=parseFloat($('dep').value)||0;
   const showD=$('dtog').checked;
-  let sub=0;
-  items.forEach(it=>{const s=SVC[it.k]||{p:0};sub+=(it.op!==null?it.op:s.p)*it.q;});
-  const inv=sub-(showD?disc:0),bal=inv-dep;
+
+  const sub=calcSubtotal();
+  const rushMult=getRushMultiplier();
+  const rushAmt=sub*rushMult;
+
+  // Update rush fee display in panel
+  $('rush-fee-display').textContent=fmt(rushAmt);
+
+  const inv=sub+rushAmt-(showD?disc:0);
+  const bal=inv-dep;
   const sl={unpaid:'UNPAID',partial:'PARTIAL',paid:'PAID'};
   const sc={unpaid:'su',partial:'sp',paid:'sk'};
+
+  // Rush label for invoice
+  const rushLabels={
+    '0.25':'Rush Fee (+25%) — 25–50% of standard turnaround',
+    '0.50':'Rush Fee (+50%) — Under 25% of standard turnaround',
+    '0.75':'Rush Fee (+75%) — Same-day / under 12 hours'
+  };
+  const rushTierKey=($('rush-tier').value)||'0';
+
   const rows=items.filter(i=>i.k).map(it=>{
     const isC=it.k==='__custom__';
     const s=isC?{p:0,u:'',d:'',l:''}:SVC[it.k];
@@ -271,12 +335,18 @@ function render(){
     const unit=isC?(it.cu||''):s.u;
     return`<tr><td><div class="ts">${label}</div>${desc?`<div class="td">${desc}</div>`:''}</td><td>${fmt(p)}</td><td>${it.q}${unit?' '+unit:''}</td><td>${fmt(tot)}</td></tr>`;
   }).join('')||`<tr><td colspan="4" class="es">Select a service from the left panel</td></tr>`;
+
+  // Rush fee row for invoice table
+  const rushRow=(rushOpen&&rushAmt>0)
+    ?`<tr style="background:#fff8f8"><td><div class="ts" style="color:#b83232">⚡ ${rushLabels[rushTierKey]||'Rush Fee'}</div><div class="td" style="color:#c97070">100% upfront · 1 revision round · Availability confirmed in writing</div></td><td style="color:#b83232">${Math.round(rushMult*100)}%</td><td>of subtotal</td><td style="color:#b83232">${fmt(rushAmt)}</td></tr>`
+    :'';
+
   $('doc').innerHTML=`
     <div class="dh">
       <div><div class="db">Lucid Sound Work</div><div class="dbs">Professional Audio Services</div></div>
       <div><div class="dtw">Invoice</div><div class="dn">${num}</div></div>
     </div>
-    <div class="dm" style="${stat==='paid'?'grid-template-columns:1fr 1fr':''}"> 
+    <div class="dm" style="${stat==='paid'?'grid-template-columns:1fr 1fr':''}">
       <div class="dmi"><div class="ml">Invoice Date</div><div class="mv">${fmtD($('idate').value)}</div></div>
       ${stat!=='paid'?`<div class="dmi"><div class="ml">Due Date</div><div class="mv">${fmtD($('idue').value)}</div></div>`:''}
       <div class="dmi"><div class="ml">Status</div><div class="mv"><span class="sb ${sc[stat]}">${sl[stat]}</span></div></div>
@@ -287,10 +357,11 @@ function render(){
     </div>
     <div class="tw"><table>
       <thead><tr><th style="width:52%">Service / Description</th><th>Rate</th><th>Qty</th><th>Amount</th></tr></thead>
-      <tbody>${rows}</tbody>
+      <tbody>${rows}${rushRow}</tbody>
     </table></div>
     <div class="tot"><div class="tb">
       <div class="tr"><span class="tl">Subtotal</span><span class="tv">${fmt(sub)}</span></div>
+      ${rushOpen&&rushAmt>0?`<div class="tr rush-row"><span class="tl">⚡ Rush Fee</span><span class="tv">${fmt(rushAmt)}</span></div>`:''}
       ${showD&&disc>0?`<div class="tr"><span class="tl">${dlbl}</span><span class="tv" style="color:var(--green)">− ${fmt(disc)}</span></div>`:''}
       <div class="tr"><span class="tl">Invoice Total</span><span class="tv">${fmt(inv)}</span></div>
       ${dep>0?`<div class="tr dr2"><span class="tl">Deposit Received</span><span class="tv">− ${fmt(dep)}</span></div>`:''}
@@ -298,7 +369,7 @@ function render(){
     </div></div>
     <div class="fg2">
       <div class="fb"><div class="ft">Payment Methods</div><div class="fbd">PayPal: admin@lucidsoundwork.com<br>Venmo: @[YourVenmo]<br>Cash App: $[YourCashApp]<br>Zelle: admin@lucidsoundwork.com</div></div>
-      <div class="fb"><div class="ft">Payment Terms</div><div class="fbd">50% deposit required before work begins<br>Balance due upon delivery of final files<br>Retainers billed on the 1st of each month<br>Late payments: $25 fee after 7 days</div></div>
+      <div class="fb"><div class="ft">Payment Terms</div><div class="fbd">${rushOpen&&rushAmt>0?'<strong style="color:#b83232">⚡ RUSH PROJECT — 100% payment required upfront</strong><br>1 revision round included<br>':'50% deposit required before work begins<br>Balance due upon delivery of final files<br>'}Retainers billed on the 1st of each month<br>Late payments: $25 fee after 7 days</div></div>
     </div>
     ${notes?`<div style="padding:16px 24px;border-top:1px solid var(--paper3)"><div class="ft">Notes</div><div style="font-size:10px;color:var(--ink2);line-height:1.7;font-style:italic">${notes}</div></div>`:''}
     <div class="bar">Lucid Sound Work &nbsp;·&nbsp; admin@lucidsoundwork.com &nbsp;·&nbsp; Chicago, IL &nbsp;·&nbsp; Thank you for your business.</div>`;
@@ -311,15 +382,13 @@ function savePDF(){
   const num=$('inum').value||'LSW-0085';
   const client=slugify($('cname').value||'Client');
   const filename='LSW-Invoice-'+num+'-'+client+'.pdf';
-  // Set the document title — browsers use this as the default PDF filename
   const prev=document.title;
   document.title=filename;
   window.print();
-  // Restore after a short delay (print dialog is synchronous on most browsers)
   setTimeout(()=>{document.title=prev;},2000);
 }
 
-// ── GOOGLE SHEETS SYNC ────────────────────────────────────────────────────────
+// ── GOOGLE SHEETS SYNC ─────────────────────────────────────────────────────────
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsXUa2sJ9OIbuoXd0nIyn2CZTUJVcxQYwZSaYY3QP6ql4GfoU8fL3qjMjoYWrLe36-JQ/exec';
 
 function sheetsMsg(txt, color){
@@ -330,8 +399,6 @@ function sheetsMsg(txt, color){
 
 async function sendToSheets(){
   const btn=$('sheets-btn');
-
-  // ── Gather invoice data ──────────────────────────────────────────────────
   const num    = $('inum').value  || 'LSW-0085';
   const date   = $('idate').value || '';
   const client = $('cname').value || '';
@@ -344,25 +411,15 @@ async function sendToSheets(){
   if(!date)  {sheetsMsg('⚠ Add an invoice date first.','#f5a623');return;}
   if(!items.filter(i=>i.k).length){sheetsMsg('⚠ Add at least one service.','#f5a623');return;}
 
-  // Build one row per service line item
   const clientEmail = $('cemail').value.trim();
   const discount    = showD ? discAmt : 0;
+  const sub         = calcSubtotal();
+  const rushMult    = getRushMultiplier();
+  const rushAmt     = sub * rushMult;
+  const invTotal    = sub + rushAmt - discount;
+  const balanceDue  = invTotal - dep;
 
-  // Calculate invoice totals (shared across all rows)
-  let subtotal = 0;
-  items.filter(i=>i.k).forEach(it=>{
-    const isC=it.k==='__custom__';
-    const s=isC?{p:0}:SVC[it.k];
-    const p=it.op!==null?it.op:s.p;
-    subtotal+=p*it.q;
-  });
-  const invTotal   = subtotal - discount;
-  const balanceDue = invTotal - dep;
-
-  // Build one row per line item
-  // Each row: A:num B:date C:client D:email E:svcType F:desc
-  //           G:lineTotal H:discount(first row only) I:invTotal(first row only)
-  //           J:deposit(first row only) K:balance(first row only) L:datePaid M:status
+  // Columns A–M (existing) + N: rushFee + O: rushMultiplier
   const incomeRows = items.filter(i=>i.k).map((it, idx)=>{
     const isC  = it.k==='__custom__';
     const s    = isC?{p:0,u:'',l:''}:SVC[it.k];
@@ -376,16 +433,17 @@ async function sendToSheets(){
     else if(it.k.startsWith('med'))svcType='Meditation/Ambient';
     else if(it.k.startsWith('mix'))svcType='Music Mixing';
     else if(isC)                   svcType='Custom';
-    // Only first row carries invoice-level totals; others get 0 to avoid double-counting
     const isFirst = idx===0;
     return [
       num, date, client, clientEmail, svcType, label+qty,
       lineTotal,
-      isFirst ? discount : 0,
-      isFirst ? invTotal : 0,
-      isFirst ? dep      : 0,
-      isFirst ? balanceDue : 0,
-      '', status
+      isFirst ? discount  : 0,
+      isFirst ? invTotal  : 0,
+      isFirst ? dep       : 0,
+      isFirst ? balanceDue: 0,
+      '', status,
+      isFirst ? rushAmt   : 0,   // N: Rush Fee Amount
+      isFirst ? (rushMult>0 ? Math.round(rushMult*100)+'%' : '') : ''  // O: Rush Multiplier
     ];
   });
 
@@ -398,10 +456,7 @@ async function sendToSheets(){
       method: 'POST',
       body: JSON.stringify({ incomeRows })
     });
-
-    // Apps Script always returns 200 — parse the JSON body for status
     const data = await res.json();
-
     if(data.status === 'ok'){
       const rowsWritten = data.rowsWritten || 1;
       const msg = '✓ Added to Income Tracker (' + rowsWritten + ' row' + (rowsWritten>1?'s':'') + ')';
@@ -419,10 +474,8 @@ async function sendToSheets(){
     } else {
       throw new Error(data.message||'Unknown error from Apps Script');
     }
-
   } catch(err){
     console.error(err);
-    // CORS: Apps Script redirects cause fetch to fail even on success — check if it went through
     if(err.message.includes('Failed to fetch')||err.message.includes('NetworkError')||err.message.includes('CORS')){
       sheetsMsg('✓ Sent — check your sheet to confirm it landed','#f5a623');
       incrementInvoiceNumber();
@@ -435,7 +488,7 @@ async function sendToSheets(){
   }
 }
 
-// ── EMAILJS INVOICE SENDER ────────────────────────────────────────────────────
+// ── EMAILJS INVOICE SENDER ─────────────────────────────────────────────────────
 const EMAILJS_SERVICE_ID  = 'service_aqnl6vp';
 const EMAILJS_TEMPLATE_ID = 'template_v77eyk1';
 
@@ -454,7 +507,6 @@ async function sendInvoiceEmail(){
   if(!cn){ emailMsg('⚠ Add a client name first.','#f5a623'); return; }
   if(!items.filter(i=>i.k).length){ emailMsg('⚠ Add at least one service.','#f5a623'); return; }
 
-  // Build line items
   const lineItems = items.filter(i=>i.k).map(it=>{
     const isC = it.k==='__custom__';
     const s   = isC ? {p:0,u:'',l:''} : SVC[it.k];
@@ -465,16 +517,21 @@ async function sendInvoiceEmail(){
     return `${lbl}${it.q>1?' (x'+it.q+(unit?' '+unit:'')+')':(unit?' / '+unit:'')}  →  ${fmt(tot)}`;
   }).join('\n');
 
-  // Totals
   const showD   = $('dtog').checked;
   const disc    = showD ? (parseFloat($('damt').value)||0) : 0;
   const dlbl    = $('dlbl').value || 'Discount';
   const dep     = parseFloat($('dep').value)||0;
-  const sub     = items.filter(i=>i.k).reduce((a,it)=>{
-    const s=SVC[it.k]||{p:0}; return a+(it.op!==null?it.op:s.p)*it.q;
-  },0);
-  const invTotal = sub - disc;
+  const sub     = calcSubtotal();
+  const rushMult= getRushMultiplier();
+  const rushAmt = sub * rushMult;
+  const invTotal = sub + rushAmt - disc;
   const balance  = invTotal - dep;
+
+  // Append rush fee to line items string if applicable
+  const rushLabels={'0.25':'+25%','0.50':'+50%','0.75':'+75%'};
+  const rushLine = (rushOpen&&rushAmt>0)
+    ? `\n⚡ Rush Fee (${rushLabels[$('rush-tier').value]||''})  →  ${fmt(rushAmt)}`
+    : '';
 
   const params = {
     to_email:      ce,
@@ -483,7 +540,7 @@ async function sendInvoiceEmail(){
     invoice_date:  fmtD($('idate').value),
     due_date:      fmtD($('idue').value),
     status:        $('istat').value.toUpperCase(),
-    line_items:    lineItems,
+    line_items:    lineItems + rushLine,
     subtotal:      fmt(sub),
     discount_line: disc>0 ? `${dlbl}: − ${fmt(disc)}` : '',
     deposit:       fmt(dep),
@@ -519,7 +576,6 @@ async function sendInvoiceEmail(){
 function incrementInvoiceNumber(){
   const field = $('inum');
   const val = field.value || 'LSW-0085';
-  // Match pattern like LSW-0085 — extract prefix and number
   const match = val.match(/^(.*?)(\d+)$/);
   if(match){
     const prefix = match[1];

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Richnsemo Budget Automator v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+:root {
+  --navy:#0f1729;--navy2:#1a2642;--navy3:#243356;
+  --teal:#00c9a7;--teal2:#00a88c;
+  --amber:#f59e0b;--red:#ef4444;--green:#10b981;
+  --text:#e2e8f0;--text2:#94a3b8;
+  --border:rgba(255,255,255,0.08);--card:rgba(255,255,255,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--navy);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 10% 20%,rgba(0,201,167,.07) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 90% 80%,rgba(245,158,11,.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+.header{margin-bottom:40px}
+.eyebrow{font-size:11px;color:var(--teal);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,44px);font-weight:800;color:#fff;line-height:1.1;letter-spacing:-.02em}
+h1 span{color:var(--teal)}
+.sub{margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6}
+.steps{display:flex;gap:8px;margin-bottom:36px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:100px;font-size:11px;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .3s}
+.step.active{border-color:var(--teal);color:var(--teal);background:rgba(0,201,167,.08)}
+.step.done{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08)}
+.step-num{width:18px;height:18px;border-radius:50%;background:currentColor;color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.upload-zone{border:2px dashed rgba(0,201,167,.3);border-radius:16px;padding:48px 40px;text-align:center;background:rgba(0,201,167,.03);cursor:pointer;transition:all .3s;position:relative;overflow:hidden;margin-bottom:24px}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--teal);background:rgba(0,201,167,.07);transform:translateY(-2px)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-icon{font-size:44px;margin-bottom:14px;display:block}
+.upload-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:6px}
+.upload-sub{font-size:11px;color:var(--text2)}
+.config-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:600px){.config-row{grid-template-columns:1fr 1fr}}
+.field label{display:block;font-size:10px;color:var(--teal);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.field select,.field input{width:100%;background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;appearance:none}
+.field select:focus,.field input:focus{border-color:var(--teal)}
+.btn-run{width:100%;padding:17px;background:linear-gradient(135deg,var(--teal),var(--teal2));border:none;border-radius:12px;color:var(--navy);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:32px}
+.btn-run:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,201,167,.35)}
+.btn-run:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.progress-bar{height:3px;background:var(--border);border-radius:100px;margin-bottom:28px;overflow:hidden;display:none}
+.progress-bar.on{display:block}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:100px;transition:width .5s ease;width:0%}
+.log{background:var(--navy2);border:1px solid var(--border);border-radius:12px;padding:18px;font-size:11px;line-height:2;margin-bottom:28px;max-height:160px;overflow-y:auto;display:none}
+.log.on{display:block}
+.ll{color:var(--text2)}.ll.s{color:var(--teal)}.ll.w{color:var(--amber)}.ll.e{color:var(--red)}
+.results{display:none}
+.results.on{display:block}
+.res-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.res-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.res-title span{color:var(--teal)}
+.btn-grp{display:flex;gap:8px;flex-wrap:wrap}
+.btn-dl{display:flex;align-items:center;gap:7px;padding:9px 18px;background:var(--amber);border:none;border-radius:8px;color:var(--navy);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-dl:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.3)}
+.btn-xl{background:var(--teal);color:var(--navy)}
+.btn-xl:hover{box-shadow:0 4px 16px rgba(0,201,167,.3)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:28px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 14px;text-align:center}
+.kpi-label{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.kpi-value{font-family:'Syne',sans-serif;font-size:20px;font-weight:800}
+.kpi-value.g{color:var(--green)}.kpi-value.r{color:var(--red)}.kpi-value.a{color:var(--amber)}.kpi-value.t{color:var(--teal)}
+.kpi-delta{font-size:9px;margin-top:3px}
+.kpi-delta.over{color:var(--red)}.kpi-delta.under{color:var(--green)}
+.alerts{margin-bottom:20px;display:flex;flex-direction:column;gap:8px}
+.alert{padding:12px 16px;border-radius:9px;font-size:11px;line-height:1.5;border-left:3px solid;display:flex;align-items:flex-start;gap:9px}
+.alert.warn{background:rgba(245,158,11,.08);border-color:var(--amber)}
+.alert.danger{background:rgba(239,68,68,.08);border-color:var(--red)}
+.alert.good{background:rgba(16,185,129,.08);border-color:var(--green)}
+.alert-icon{font-size:15px;flex-shrink:0}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.tc-hdr{padding:14px 18px;background:var(--navy2);border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 14px;font-size:9px;color:var(--text2);text-align:left;text-transform:uppercase;letter-spacing:.1em;background:var(--navy2);border-bottom:1px solid var(--border)}
+thead th:not(:first-child){text-align:right}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.04)}
+tbody td{padding:11px 14px;font-size:11px}
+tbody td:not(:first-child){text-align:right}
+.cat-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0}
+.vbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:100px;font-size:9px;font-weight:500}
+.vbadge.over{background:rgba(239,68,68,.15);color:var(--red)}
+.vbadge.under{background:rgba(16,185,129,.15);color:var(--green)}
+.vbadge.on{background:rgba(148,163,184,.15);color:var(--text2)}
+.bar-w{width:70px;height:5px;background:#1E2A3A;border-radius:100px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:5px}
+.bar-f{height:100%;border-radius:100px;transition:width .5s}
+.txn-list{max-height:340px;overflow-y:auto}
+.txn-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:10px;transition:background .15s}
+.txn-row:hover{background:rgba(255,255,255,.04)}
+.txn-date{color:var(--text2);width:68px;flex-shrink:0}
+.txn-cat{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:500;width:130px;flex-shrink:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.txn-desc{flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txn-amt{font-weight:500;width:75px;text-align:right;flex-shrink:0}
+.txn-amt.ex{color:var(--red)}.txn-amt.inc{color:var(--green)}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--navy3);border-radius:2px}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;display:none}
+.spinner.on{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.ai{animation:fadeUp .4s ease both}
+.copy-notice{background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);border-radius:10px;padding:14px 18px;font-size:11px;line-height:1.8;margin-bottom:20px;display:none}
+.copy-notice.on{display:block}
+.copy-notice strong{color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header ai">
+    <div class="eyebrow">💰 Richnsemo Household</div>
+    <h1>Budget <span>Automator</span> v2</h1>
+    <p class="sub">Drop in your bank CSV → AI categorizes transactions → Download formatted data ready to paste into the <strong>📋 Transactions</strong> sheet of your Finance Workbook.</p>
+  </div>
+
+  <div class="steps ai" id="steps">
+    <div class="step active" id="s1"><div class="step-num">1</div> Upload CSV</div>
+    <div class="step" id="s2"><div class="step-num">2</div> Configure</div>
+    <div class="step" id="s3"><div class="step-num">3</div> AI Analyze</div>
+    <div class="step" id="s4"><div class="step-num">4</div> Results + Export</div>
+  </div>
+
+  <div class="upload-zone ai" id="zone">
+    <input type="file" accept=".csv" id="csvInput"/>
+    <span class="upload-icon">📂</span>
+    <div class="upload-title">Drop your bank CSV here</div>
+    <div class="upload-sub">Format: Date, Time, Amount, Type, Description</div>
+  </div>
+
+  <div class="config-row ai">
+    <div class="field">
+      <label>Month</label>
+      <select id="selMonth">
+        <option value="Jan">January</option><option value="Feb">February</option>
+        <option value="Mar">March</option><option value="Apr">April</option>
+        <option value="May">May</option><option value="Jun">June</option>
+        <option value="Jul">July</option><option value="Aug">August</option>
+        <option value="Sep">September</option><option value="Oct">October</option>
+        <option value="Nov">November</option><option value="Dec">December</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Year</label>
+      <input type="number" id="selYear" value="2026" min="2020" max="2030"/>
+    </div>
+    <div class="field">
+      <label>Account</label>
+      <input type="text" id="selAcct" value="Checking" placeholder="e.g. Checking"/>
+    </div>
+  </div>
+
+  <button class="btn-run ai" id="btnRun" disabled>
+    <span class="spinner" id="spinner"></span>
+    <span id="btnTxt">⚡ Analyze & Categorize</span>
+  </button>
+
+  <div class="progress-bar" id="pbar"><div class="progress-fill" id="pfill"></div></div>
+  <div class="log" id="log"></div>
+
+  <div class="results" id="results">
+    <div class="res-hdr">
+      <div class="res-title">Results — <span id="rLabel"></span></div>
+      <div class="btn-grp">
+        <button class="btn-dl btn-xl" id="btnXlCsv" onclick="downloadWorkbookCSV()">📋 Download for Transactions Sheet</button>
+        <button class="btn-dl" id="btnReport" onclick="downloadReport()">↓ Summary Report</button>
+      </div>
+    </div>
+
+    <div class="copy-notice on" id="copyNotice">
+      <strong>📋 How to update your Finance Workbook:</strong><br>
+      1. Click <strong>"Download for Transactions Sheet"</strong> above<br>
+      2. Open <strong>richnsemo_finance_v2.xlsx</strong> → go to <strong>📋 Transactions</strong> tab<br>
+      3. Find the first empty row after existing data (row 4 or after last entry)<br>
+      4. In Excel/Google Sheets: <strong>paste the downloaded CSV data</strong> (or copy-paste the table below)<br>
+      5. The Actuals Summary table at the bottom of that sheet auto-updates → Dashboard KPIs refresh automatically ✅
+    </div>
+
+    <div class="kpi-grid" id="kpis"></div>
+    <div class="alerts" id="alertsBox"></div>
+
+    <div class="table-card ai">
+      <div class="tc-hdr">📊 Spending by Category — Budget vs Actual</div>
+      <table><thead><tr><th>Category</th><th>Budget</th><th>Actual</th><th>Progress</th><th>Variance</th></tr></thead>
+      <tbody id="catBody"></tbody></table>
+    </div>
+
+    <div class="table-card ai">
+      <div class="tc-hdr">🧾 Categorized Transactions — ready to paste into workbook</div>
+      <div class="txn-list" id="txnList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Budget matching workbook
+const BUDGET = {
+  'Mortgage':2900,'HOA':200,'Home Repairs/Projects':100,
+  "People's Gas":60,'ComEd':185,'Water':65,'Internet':150,'SimpliSafe':33,
+  'Groceries':750,'Dining Out':400,'Coffee/Snacks':80,
+  'Car Insurance':128,'Gas/Fuel':250,'Parking':100,
+  'Figo (Pet Insurance)':110,'Stokely (Pet)':300,
+  'Spotify':20,'Tonal':60,'BlueLand':60,'Hulu':32,'Prime':11,'Current Affairs':8,
+  'Shopping':100,'Subscriptions':50,'Health/Medical':200,'Misc/Other':100,
+};
+const CAT_COLORS = {
+  'Mortgage':'#3b82f6','HOA':'#6366f1','Home Repairs/Projects':'#8b5cf6',
+  "People's Gas":'#f97316','ComEd':'#fb923c','Water':'#38bdf8','Internet':'#0ea5e9','SimpliSafe':'#06b6d4',
+  'Groceries':'#10b981','Dining Out':'#34d399','Coffee/Snacks':'#6ee7b7',
+  'Car Insurance':'#f59e0b','Gas/Fuel':'#fbbf24','Parking':'#fcd34d',
+  'Figo (Pet Insurance)':'#ef4444','Stokely (Pet)':'#f87171',
+  'Spotify':'#ec4899','Tonal':'#f472b6','BlueLand':'#a78bfa','Hulu':'#c084fc','Prime':'#818cf8','Current Affairs':'#64748b',
+  'Shopping':'#94a3b8','Subscriptions':'#a78bfa','Health/Medical':'#f43f5e','Misc/Other':'#94a3b8',
+};
+
+let parsed=[], analysisResult=null;
+
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  const hdrs=lines[0].split(',').map(h=>h.trim());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(const ch of line){
+      if(ch==='"')inQ=!inQ;
+      else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+    const row={};hdrs.forEach((h,i)=>row[h]=vals[i]||'');
+    return row;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
+
+function preCat(desc){
+  const d=desc.toUpperCase();
+  if(/MORTGAGE|MTG PAYMT/.test(d))return'Mortgage';
+  if(/HOA|OLD NATIONAL BNK/.test(d))return'HOA';
+  if(/COMED/.test(d))return'ComEd';
+  if(/PEOPLES GAS/.test(d))return"People's Gas";
+  if(/SIMPLISAFE/.test(d))return'SimpliSafe';
+  if(/WATER BILL|CITY OF CHICAGO WATER/.test(d))return'Water';
+  if(/STATE FARM|FIGO/.test(d))return'Car Insurance';
+  if(/HOME DEPOT/.test(d))return'Home Repairs/Projects';
+  if(/SHELL OIL|BP#|QT 72/.test(d))return'Gas/Fuel';
+  if(/PARK CHICAGO/.test(d))return'Parking';
+  if(/WHOLEFDS|TRADER JOE|COSTCO WHSE|MARIANOS|JEWEL OSCO|WILSON BROADWAY/.test(d))return'Groceries';
+  if(/PETCO/.test(d))return'Stokely (Pet)';
+  if(/FIGO/.test(d))return'Figo (Pet Insurance)';
+  if(/STOKELY/.test(d))return'Stokely (Pet)';
+  if(/COMPOUNDING|MEDICAL|DENTAL|ACUPUNCTURE/.test(d))return'Health/Medical';
+  if(/CITI AUTOPAY|HELOC|SOFI|BESTEGG|BEST EGG|FED LOAN|MOHAYLA/.test(d))return null; // skip debt
+  if(/SPOTIFY/.test(d))return'Spotify';
+  if(/TONAL/.test(d))return'Tonal';
+  if(/BLUELAND/.test(d))return'BlueLand';
+  if(/HULU/.test(d))return'Hulu';
+  if(/AMAZON PRIME|PRIME VIDEO/.test(d))return'Prime';
+  if(/CURRENT AFFAIRS/.test(d))return'Current Affairs';
+  if(/AMAZON MKTPL|AMAZON\.COM|TARGET|BEST BUY|BOMGAARS/.test(d))return'Shopping';
+  if(/ROUND UPS|BOOSTER TRANSFER|TRANSFER|JPMORG|INTEREST PAID|ATM FEE|DEPOSIT/.test(d))return null;
+  if(/COFFEE|DONUTS|CAFE|TEA/.test(d))return'Coffee/Snacks';
+  return'Dining Out';
+}
+
+function lg(msg,t=''){
+  const el=document.getElementById('log');
+  el.classList.add('on');
+  el.innerHTML+=`<div class="ll ${t}">> ${msg}</div>`;
+  el.scrollTop=el.scrollHeight;
+}
+function prog(p){document.getElementById('pbar').classList.add('on');document.getElementById('pfill').style.width=p+'%'}
+function step(n){for(let i=1;i<=4;i++)document.getElementById(`s${i}`).className='step'+(i<n?' done':i===n?' active':'')}
+function $f(n){return'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+// File upload
+document.getElementById('csvInput').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const fr=new FileReader();
+  fr.onload=ev=>{
+    parsed=parseCSV(ev.target.result);
+    const zone=document.getElementById('zone');
+    zone.style.borderColor='var(--green)';
+    zone.querySelector('.upload-icon').textContent='✅';
+    zone.querySelector('.upload-title').textContent=file.name;
+    zone.querySelector('.upload-sub').textContent=`${parsed.length} transactions loaded`;
+    document.getElementById('btnRun').disabled=false;
+    // Auto-detect month
+    const firstRow=parsed[0];
+    const dateKey=Object.keys(firstRow).find(k=>k.trim()==='Date');
+    if(dateKey){
+      const d=firstRow[dateKey]||'';
+      const parts=d.split('-');
+      if(parts.length>=2){
+        const mIdx=parseInt(parts[1])-1;
+        const mNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        if(mIdx>=0&&mIdx<12)document.getElementById('selMonth').value=mNames[mIdx];
+        if(parts[0])document.getElementById('selYear').value=parts[0];
+      }
+    }
+    step(2);
+  };
+  fr.readAsText(file);
+});
+const zone=document.getElementById('zone');
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over')});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+zone.addEventListener('drop',e=>{
+  e.preventDefault();zone.classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];if(!file)return;
+  const dt=new DataTransfer();dt.items.add(file);
+  document.getElementById('csvInput').files=dt.files;
+  document.getElementById('csvInput').dispatchEvent(new Event('change'));
+});
+
+document.getElementById('btnRun').addEventListener('click',async()=>{
+  if(!parsed.length)return;
+  const month=document.getElementById('selMonth').value;
+  const year=document.getElementById('selYear').value;
+  const acct=document.getElementById('selAcct').value||'Checking';
+  const monthFull=new Date(`${year}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(month)+1}-01`).toLocaleString('en-US',{month:'long'});
+
+  document.getElementById('btnRun').disabled=true;
+  document.getElementById('spinner').classList.add('on');
+  document.getElementById('btnTxt').textContent='Analyzing…';
+  document.getElementById('log').innerHTML='';
+  step(3);
+  prog(10);
+
+  const amtK=Object.keys(parsed[0]).find(k=>k.trim()==='Amount');
+  const descK=Object.keys(parsed[0]).find(k=>k.trim()==='Description');
+  const dateK=Object.keys(parsed[0]).find(k=>k.trim()==='Date');
+  const typeK=Object.keys(parsed[0]).find(k=>k.trim()==='Type');
+
+  const spending=[],skipped=[];
+  for(const t of parsed){
+    const amt=parseFloat(t[amtK]);
+    const desc=t[descK]||'';
+    const date=t[dateK]||'';
+    const type=t[typeK]||'Withdrawal';
+    if(isNaN(amt)||amt>=0){skipped.push(t);continue}
+    const cat=preCat(desc);
+    if(!cat){skipped.push(t);continue}
+    spending.push({date,month,amount:Math.abs(amt),description:desc,category:cat,type,account:acct});
+  }
+  lg(`✓ Pre-categorized ${spending.length} transactions, skipped ${skipped.length} deposits/debt`,`s`);
+  prog(30);
+
+  // AI refinement for ambiguous
+  const ambig=spending.filter(t=>t.category==='Dining Out'&&!/RESTAURANT|GRILL|RAMEN|CAFE|COFFEE|PIZZA|BURGER|SUSHI|BAR |TAVERN|DINER|BISTRO|KITCHEN|CHEVAL|EKIBEN|PORTILLO|SAIGON|GREEK|SHRIMP|PERSIAN|LUCY|THALIA|ALAMO|DONUTS/i.test(t.description));
+  if(ambig.length>0){
+    lg(`Sending ${Math.min(ambig.length,25)} ambiguous items to AI…`);
+    prog(50);
+    try{
+      const descs=ambig.slice(0,25).map(t=>t.description).join('\n');
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:`Categorize these household transactions. Valid categories: Mortgage,HOA,Home Repairs/Projects,People's Gas,ComEd,Water,Internet,SimpliSafe,Groceries,Dining Out,Coffee/Snacks,Car Insurance,Gas/Fuel,Parking,Figo (Pet Insurance),Stokely (Pet),Spotify,Tonal,BlueLand,Hulu,Prime,Current Affairs,Shopping,Health/Medical,Misc/Other\n\n${descs}\n\nReturn ONLY valid JSON array [{\"desc\":\"...\",\"category\":\"...\"}]. No markdown.`}]})
+      });
+      const d=await r.json();
+      const txt=d.content?.find(b=>b.type==='text')?.text||'[]';
+      const cats=JSON.parse(txt.replace(/```json|```/g,'').trim());
+      let fixed=0;
+      for(const{desc,category}of cats){
+        const m=spending.find(t=>t.description===desc);
+        if(m&&(BUDGET[category]!==undefined||category==='Misc/Other')){m.category=category;fixed++;}
+      }
+      lg(`✓ AI refined ${fixed} categories`,`s`);
+    }catch(e){lg(`⚠ AI refinement skipped`,`w`)}
+  }
+  prog(70);
+
+  // Aggregate
+  const catTotals={};
+  for(const t of spending) catTotals[t.category]=(catTotals[t.category]||0)+t.amount;
+
+  // AI insights
+  let insights=[];
+  lg('Generating budget insights…');
+  prog(85);
+  try{
+    const summary=Object.entries(catTotals).map(([c,a])=>`${c}: $${a.toFixed(2)} (budget: $${BUDGET[c]||0})`).join('\n');
+    const r2=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:`Budget advisor for Richnsemo family. Analyze ${monthFull} ${year} spending. Return ONLY JSON array of 3-5 alerts with "type"(danger/warn/good), "icon"(emoji), "message"(max 100 chars).\n\n${summary}\n\nJSON only, no markdown.`}]})
+    });
+    const d2=await r2.json();
+    const t2=d2.content?.find(b=>b.type==='text')?.text||'[]';
+    insights=JSON.parse(t2.replace(/```json|```/g,'').trim());
+    lg(`✓ ${insights.length} insights generated`,`s`);
+  }catch(e){lg(`⚠ AI insights skipped`,`w`)}
+
+  prog(100);
+  analysisResult={catTotals,spending,insights,monthFull,month,year,acct};
+  renderResults(analysisResult);
+  step(4);
+  lg(`✅ Done — ${spending.length} transactions processed`,`s`);
+  document.getElementById('btnRun').disabled=false;
+  document.getElementById('spinner').classList.remove('on');
+  document.getElementById('btnTxt').textContent='⚡ Re-Analyze';
+});
+
+function renderResults({catTotals,spending,insights,monthFull,year}){
+  document.getElementById('results').classList.add('on');
+  document.getElementById('rLabel').textContent=`${monthFull} ${year}`;
+
+  const totalA=Object.values(catTotals).reduce((a,b)=>a+b,0);
+  const totalB=Object.values(BUDGET).reduce((a,b)=>a+b,0);
+  const diff=totalA-totalB;
+  const overCats=Object.entries(catTotals).filter(([c,a])=>BUDGET[c]&&a>BUDGET[c]).length;
+
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Spent</div><div class="kpi-value ${diff>0?'r':'g'}">${$f(totalA)}</div><div class="kpi-delta ${diff>0?'over':'under'}">${diff>0?'▲ over':'▼ under'} by ${$f(diff)}</div></div>
+    <div class="kpi"><div class="kpi-label">Monthly Budget</div><div class="kpi-value t">${$f(totalB)}</div></div>
+    <div class="kpi"><div class="kpi-label">Over-Budget</div><div class="kpi-value ${overCats>0?'a':'g'}">${overCats} cats</div></div>
+    <div class="kpi"><div class="kpi-label">Transactions</div><div class="kpi-value t">${spending.length}</div></div>
+  `;
+
+  document.getElementById('alertsBox').innerHTML=insights.map(i=>`
+    <div class="alert ${i.type}"><span class="alert-icon">${i.icon}</span><span>${i.message}</span></div>
+  `).join('');
+
+  const tbody=document.getElementById('catBody');
+  tbody.innerHTML=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([cat,actual])=>{
+    const budget=BUDGET[cat]||0;
+    const v=actual-budget;
+    const pct=budget>0?Math.min((actual/budget)*100,150):100;
+    const barColor=pct>100?'var(--red)':pct>80?'var(--amber)':'var(--green)';
+    const vc=v>20?'over':v<-20?'under':'on';
+    const vl=v>20?`▲ ${$f(v)}`:v<-20?`▼ ${$f(Math.abs(v))}`:'≈ on track';
+    const col=CAT_COLORS[cat]||'#94a3b8';
+    return`<tr><td><span class="cat-dot" style="background:${col}"></span>${cat}</td><td>${$f(budget)}</td><td><strong>${$f(actual)}</strong></td><td><div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${barColor}"></div></div>${Math.round(pct)}%</td><td><span class="vbadge ${vc}">${vl}</span></td></tr>`;
+  }).join('');
+
+  const txnList=document.getElementById('txnList');
+  txnList.innerHTML=[...spending].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>{
+    const col=CAT_COLORS[t.category]||'#94a3b8';
+    return`<div class="txn-row"><span class="txn-date">${t.date}</span><span class="txn-cat" style="background:${col}22;color:${col}">${t.category}</span><span class="txn-desc">${t.description}</span><span class="txn-amt ex">-${$f(t.amount)}</span></div>`;
+  }).join('');
+}
+
+// Download formatted for Transactions sheet: Date,Month,Category,Amount,Description,Type,Source Account,Notes
+function downloadWorkbookCSV(){
+  if(!analysisResult)return;
+  const{spending,month,year,acct}=analysisResult;
+  let csv='Date,Month,Category,Amount,Description,Type,Source Account,Notes\n';
+  for(const t of spending.sort((a,b)=>new Date(a.date)-new Date(b.date))){
+    csv+=`${t.date},${month},"${t.category}",${t.amount.toFixed(2)},"${t.description.replace(/"/g,"'")}","${t.type}","${acct}",""\n`;
+  }
+  dl(csv,`Richnsemo_Transactions_${month}_${year}.csv`);
+}
+
+function downloadReport(){
+  if(!analysisResult)return;
+  const{catTotals,spending,monthFull,year}=analysisResult;
+  let csv=`Richnsemo Budget Report — ${monthFull} ${year}\n\nCATEGORY,BUDGET,ACTUAL,VARIANCE,STATUS\n`;
+  for(const[cat,actual]of Object.entries(catTotals).sort((a,b)=>b[1]-a[1])){
+    const b=BUDGET[cat]||0,v=actual-b;
+    csv+=`"${cat}",${b.toFixed(2)},${actual.toFixed(2)},${v.toFixed(2)},${v>20?'OVER':v<-20?'UNDER':'ON TRACK'}\n`;
+  }
+  const ta=Object.values(catTotals).reduce((a,b)=>a+b,0);
+  const tb=Object.values(BUDGET).reduce((a,b)=>a+b,0);
+  csv+=`\nTOTAL,${tb.toFixed(2)},${ta.toFixed(2)},${(ta-tb).toFixed(2)}\n`;
+  dl(csv,`Richnsemo_BudgetReport_${monthFull}_${year}.csv`);
+}
+
+function dl(content,filename){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:'text/csv'}));
+  a.download=filename;a.click();
+}
+
+// Set defaults
+const now=new Date();
+const mNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('selMonth').value=mNames[now.getMonth()];
+document.getElementById('selYear').value=now.getFullYear();
+</script>
+</body>
+</html>

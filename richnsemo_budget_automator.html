@@ -153,16 +153,24 @@ tbody td:not(:first-child){text-align:right}
 <script>
 // Budget matching workbook (updated with Entertainment + Travel)
 const BUDGET={
+  // HOME
   'Mortgage':2900,'HOA':200,'HELOC Payment':1200,
   'Home Repairs/Projects':100,'Home Depot':0,'Best Buy':0,
+  'Cleaning Supplies (BlueLand)':60,
+  // UTILITIES
   'SimpliSafe':33,"People's Gas":60,'ComEd':185,'Water':65,'Internet':150,
+  // FOOD
   'Groceries':750,'Dining Out':400,'Coffee/Snacks':80,
-  'Car Insurance':128,'Gas/Fuel':250,'Parking':100,
+  // TRANSPORT
+  'Car Insurance':128,'Gas/Fuel':250,'Parking':100,'Transit':20,
+  // HEALTH
   'BCBS Arit':704,'BCBS Aaron':742,'Cigna':83,
-  'Figo (Pet Insurance)':110,'Stokely (Pet)':300,
+  'Figo (Pet Insurance)':110,'Stokely (Pet)':300,'Tonal':60,
   'Health/Medical':300,
-  'Spotify':20,'Tonal':60,'BlueLand':60,'Hulu':32,'Prime':11,'Magazines':20,
-  'Entertainment':150,'Travel/Vacation':200,
+  // ENTERTAINMENT
+  'Movies/Events':150,'Netflix':18,'Hulu':32,'Prime':11,'Spotify':20,
+  'Magazines':20,'Bars/Nightlife':100,'Travel/Vacation':200,
+  // MISC
   'Shopping':150,'Savings':0,'Other':0
 };
 
@@ -176,9 +184,16 @@ const COLORS={
   'BCBS Arit':'#ef4444','BCBS Aaron':'#f87171','Cigna':'#fca5a5',
   'Figo (Pet Insurance)':'#fb7185','Stokely (Pet)':'#f43f5e',
   'Health/Medical':'#e879f9',
-  'Spotify':'#ec4899','Tonal':'#f472b6','BlueLand':'#a78bfa',
-  'Hulu':'#818cf8','Prime':'#6366f1','Magazines':'#9333ea',
-  'Entertainment':'#9333ea','Travel/Vacation':'#0891b2',
+  // HEALTH additions
+  'Tonal':'#f472b6',
+  // HOUSEHOLD
+  'Cleaning Supplies (BlueLand)':'#a78bfa',
+  // ENTERTAINMENT
+  'Movies/Events':'#9333ea','Netflix':'#e50914','Hulu':'#818cf8',
+  'Prime':'#6366f1','Spotify':'#ec4899','Magazines':'#9333ea',
+  'Bars/Nightlife':'#c084fc','Travel/Vacation':'#0891b2',
+  // TRANSPORT
+  'Transit':'#fde68a',
   'Shopping':'#94a3b8','Savings':'#10b981','Other':'#64748b'
 };
 
@@ -229,10 +244,10 @@ function preCat(desc){
   // SUBSCRIPTIONS
   if(/SPOTIFY/.test(d))return'Spotify';
   if(/TONAL/.test(d))return'Tonal';
-  if(/BLUELAND/.test(d))return'BlueLand';
+  if(/BLUELAND/.test(d))return'Cleaning Supplies (BlueLand)';
   if(/PRIME VIDEO|AMAZON PRIME/.test(d))return'Prime';
   if(/HULU/.test(d))return'Hulu';
-  if(/NETFLIX/.test(d))return'Entertainment';
+  if(/NETFLIX/.test(d))return'Netflix';
   // MAGAZINES → route to Entertainment (subcategory: Magazines)
   if(/CURRENT AFFAIRS|MAGAZINE|SUBSTACK|NEW YORKER|NEW YORK TIMES|WASHINGTON POST|THE ATLANTIC|HARPER'S/.test(d))return'Magazines';
   if(/BOOKSTORE|BOOK STORE|BOOKS|SANDMEYERS|POWELL'S|STRAND |BARNES|HALF PRICE BOOK/.test(d))return'Magazines';
@@ -245,8 +260,9 @@ function preCat(desc){
   if(/UNITED AIR|DELTA AIR|SOUTHWEST|AMERICAN AIR|SPIRIT AIR|FRONTIER AIR/.test(d))return'Travel/Vacation';
   if(/MARRIOTT|HILTON|HYATT|IHG |HOLIDAY INN|BEST WESTERN|AIRBNB|VRBO/.test(d))return'Travel/Vacation';
   if(/EXPEDIA|BOOKING\.COM|HOTELS\.COM|TRAVELOCITY|KAYAK/.test(d))return'Travel/Vacation';
-  if(/UBER(?! EATS)/.test(d))return'Parking'; // Uber rides = transport
-  if(/LYFT/.test(d))return'Parking';
+  if(/UBER(?! EATS)/.test(d))return'Transit'; // Uber rides = transport
+  if(/LYFT/.test(d))return'Transit';
+  if(/CTA |VENTRA|METRA|DIVVY/.test(d))return'Transit';
   // SHOPPING / AMAZON
   if(/AMAZON\.COM|AMAZON MKTPL|BOMGAARS/.test(d))return'Shopping';
   // COFFEE / SNACKS
@@ -260,7 +276,7 @@ function preCat(desc){
   // DINING — broad catch (TST* = Toast POS, SQ* = Square)
   if(/TST\*|SQ \*|GRUBHUB|DOORDASH|UBER EATS/.test(d))return'Dining Out';
   // BARS / LIQUOR
-  if(/LIQUOR|WINE|BEER|BAR |TAVERN|BREWERY/.test(d))return'Entertainment';
+  if(/LIQUOR|WINE|BEER|BAR |TAVERN|BREWERY/.test(d))return'Bars/Nightlife';
   // DEFAULT
   return'Dining Out';
 }

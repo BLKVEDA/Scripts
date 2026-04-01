@@ -235,6 +235,7 @@ function preCat(desc){
   if(/NETFLIX/.test(d))return'Entertainment';
   // MAGAZINES → route to Entertainment (subcategory: Magazines)
   if(/CURRENT AFFAIRS|MAGAZINE|SUBSTACK|NEW YORKER|NEW YORK TIMES|WASHINGTON POST|THE ATLANTIC|HARPER'S/.test(d))return'Magazines';
+  if(/BOOKSTORE|BOOK STORE|BOOKS|SANDMEYERS|POWELL'S|STRAND |BARNES|HALF PRICE BOOK/.test(d))return'Magazines';
   // ENTERTAINMENT — key patterns
   if(/FANDANGO|AMC |REGAL |CINEMARK|THEATER|THEATRE|CONCERT|TICKETMASTER|STUBHUB|EVENTBRITE/.test(d))return'Entertainment';
   if(/ALAMO DRAFT|TST\* ALAMO|GENE SISKEL|MUSEUM|GALLERY|ZOO |AQUARIUM/.test(d))return'Entertainment';
@@ -251,8 +252,10 @@ function preCat(desc){
   // COFFEE / SNACKS
   if(/COFFEE TREE|COFFEE|DUNKIN|STARBUCKS|DONUT|CAFE/.test(d))return'Coffee/Snacks';
   // MAGAZINES / SUBSCRIPTIONS / MEDIA
-  if(/MAGAZINE|SUBSTACK|NYT |NEW YORK TIMES|WASHINGTON POST|ATLANTIC |NEW YORKER/.test(d))return'Current Affairs';
+  // (magazine routing handled above)
   // TRANSFERS / SKIP
+  if(/PAI ATM|^ATM /.test(d))return'Other';  // Cash ATM withdrawal
+  if(/CAR WASH|AUTO WASH|CARWASH/.test(d))return'Car Insurance';  // Vehicle maintenance
   if(/ROUND UPS|TRANSFER|JPMORG|INTEREST PAID|ATM FEE|DEPOSIT|SAVINGS ACCOUNT|SPENDING ACCOUNT|MONEY MARKET/.test(d))return null;
   // DINING — broad catch (TST* = Toast POS, SQ* = Square)
   if(/TST\*|SQ \*|GRUBHUB|DOORDASH|UBER EATS/.test(d))return'Dining Out';

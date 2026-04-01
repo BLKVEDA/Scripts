@@ -454,13 +454,12 @@ function copyToClipboard(){
   if(!analysisResult)return;
   const{spending,month,year,acct}=analysisResult;
 
-  // Build tab-separated rows — Excel/Sheets paste-ready
-  const header='Date\tMonth\tCategory\tAmount\tDescription\tType\tSource Account\tNotes';
+  // Build tab-separated rows — Excel/Sheets paste-ready (no header row)
   const rows=spending
     .sort((a,b)=>new Date(a.date)-new Date(b.date))
     .map(t=>`${t.date}\t${month}\t${t.category}\t${t.amount.toFixed(2)}\t${t.description}\t${t.type}\t${acct}\t`);
 
-  const text=[header,...rows].join('\n');
+  const text=rows.join('\n');
 
   navigator.clipboard.writeText(text).then(()=>{
     // Flash both copy buttons

@@ -105,6 +105,13 @@ tbody td:not(:first-child){text-align:right}
 .copy-notice{background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);border-radius:10px;padding:14px 18px;font-size:11px;line-height:1.8;margin-bottom:20px;display:none}
 .copy-notice.on{display:block}
 .copy-notice strong{color:var(--teal)}
+.btn-copy{display:flex;align-items:center;gap:7px;padding:8px 16px;background:#6366f1;border:none;border-radius:8px;color:#fff;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .25s;white-space:nowrap}
+.btn-copy:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.4)}
+.btn-copy.copied{background:var(--green)!important;transform:translateY(-1px)}
+.tc-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--navy2);border-bottom:1px solid var(--border);gap:12px}
+.tc-hdr-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:12px 28px;border-radius:100px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);z-index:9999;white-space:nowrap;box-shadow:0 8px 32px rgba(16,185,129,.5);pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -164,17 +171,16 @@ tbody td:not(:first-child){text-align:right}
       <div class="res-title">Results — <span id="rLabel"></span></div>
       <div class="btn-grp">
         <button class="btn-dl btn-xl" id="btnXlCsv" onclick="downloadWorkbookCSV()">📋 Download for Transactions Sheet</button>
+        <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
         <button class="btn-dl" id="btnReport" onclick="downloadReport()">↓ Summary Report</button>
       </div>
     </div>
 
     <div class="copy-notice on" id="copyNotice">
       <strong>📋 How to update your Finance Workbook:</strong><br>
-      1. Click <strong>"Download for Transactions Sheet"</strong> above<br>
-      2. Open <strong>richnsemo_finance_v2.xlsx</strong> → go to <strong>📋 Transactions</strong> tab<br>
-      3. Find the first empty row after existing data (row 4 or after last entry)<br>
-      4. In Excel/Google Sheets: <strong>paste the downloaded CSV data</strong> (or copy-paste the table below)<br>
-      5. The Actuals Summary table at the bottom of that sheet auto-updates → Dashboard KPIs refresh automatically ✅
+      <strong>Option A — One click:</strong> Hit <strong>"📋 Copy to Clipboard"</strong> → open your workbook → click the first empty cell in row 4 of <strong>📋 Transactions</strong> tab → Paste (Ctrl+V / Cmd+V) ✅<br>
+      <strong>Option B — File:</strong> Click <strong>"Download for Transactions Sheet"</strong> → open the CSV → copy all rows → paste into workbook at row 4<br>
+      The Actuals Summary auto-updates → Monthly Budget actuals fill in → Dashboard KPIs refresh automatically 🚀
     </div>
 
     <div class="kpi-grid" id="kpis"></div>
@@ -187,11 +193,16 @@ tbody td:not(:first-child){text-align:right}
     </div>
 
     <div class="table-card ai">
-      <div class="tc-hdr">🧾 Categorized Transactions — ready to paste into workbook</div>
+      <div class="tc-hdr-row">
+        <div class="tc-hdr-title">🧾 Categorized Transactions — ready to paste into workbook</div>
+        <button class="btn-copy" id="btnCopyTxn" onclick="copyToClipboard()">📋 Copy All to Clipboard</button>
+      </div>
       <div class="txn-list" id="txnList"></div>
     </div>
   </div>
 </div>
+
+<div class="toast" id="toast">✅ Copied! Now paste into row 4 of the Transactions tab</div>
 
 <script>
 // Budget matching workbook
@@ -436,6 +447,48 @@ function renderResults({catTotals,spending,insights,monthFull,year}){
     const col=CAT_COLORS[t.category]||'#94a3b8';
     return`<div class="txn-row"><span class="txn-date">${t.date}</span><span class="txn-cat" style="background:${col}22;color:${col}">${t.category}</span><span class="txn-desc">${t.description}</span><span class="txn-amt ex">-${$f(t.amount)}</span></div>`;
   }).join('');
+}
+
+// Copy to clipboard — tab-separated for direct paste into Excel/Google Sheets
+function copyToClipboard(){
+  if(!analysisResult)return;
+  const{spending,month,year,acct}=analysisResult;
+
+  // Build tab-separated rows — Excel/Sheets paste-ready
+  const header='Date\tMonth\tCategory\tAmount\tDescription\tType\tSource Account\tNotes';
+  const rows=spending
+    .sort((a,b)=>new Date(a.date)-new Date(b.date))
+    .map(t=>`${t.date}\t${month}\t${t.category}\t${t.amount.toFixed(2)}\t${t.description}\t${t.type}\t${acct}\t`);
+
+  const text=[header,...rows].join('\n');
+
+  navigator.clipboard.writeText(text).then(()=>{
+    // Flash both copy buttons
+    ['btnCopy','btnCopyTxn'].forEach(id=>{
+      const btn=document.getElementById(id);
+      if(!btn)return;
+      const orig=btn.innerHTML;
+      btn.innerHTML='✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(()=>{btn.innerHTML=orig;btn.classList.remove('copied');},2500);
+    });
+    // Show toast
+    const toast=document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),3500);
+  }).catch(()=>{
+    // Fallback for browsers that block clipboard API
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.cssText='position:fixed;top:-9999px;left:-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const toast=document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),3500);
+  });
 }
 
 // Download formatted for Transactions sheet: Date,Month,Category,Amount,Description,Type,Source Account,Notes

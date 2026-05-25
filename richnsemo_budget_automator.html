@@ -161,6 +161,7 @@ const BUDGET={
   'Home Depot':0,
   'Best Buy':0,
   'Cleaning Supplies':60,
+  'Home Insurance':0,
   // UTILITIES
   'SimpliSafe':33,
   "People's Gas":60,
@@ -176,6 +177,7 @@ const BUDGET={
   'Gas/Fuel':250,
   'Parking':100,
   'Transit':20,
+  'Auto':0,
   // HEALTH
   'BCBS Arit':704,
   'BCBS Aaron':742,
@@ -193,8 +195,13 @@ const BUDGET={
   'Magazines':20,
   'Bars/Nightlife':100,
   'Travel/Vacation':200,
-  // SAVINGS
+  // PERSONAL & MISC
   'Shopping':50,
+  'Clothing':0,
+  'Personal Expense - Arit':0,
+  'Personal Expense - Aaron':0,
+  // SAVINGS
+  'General Expense':0,
   'Emergency Fund':0,
   'Vacation Fund':0,
   'House Repair Fund':0,
@@ -226,8 +233,87 @@ const COLORS={
 
 let parsed=[],result=null;
 
+function detectInstitution(headers){
+  const h=headers.map(x=>x.trim().toLowerCase());
+  if(h.includes('status') && h.includes('debit') && h.includes('credit')) return 'citi';
+  if(h.includes('type') && h.includes('memo')) return 'chase';
+  if(h.includes('running bal.') || h.includes('running bal')) return 'bofa';
+  if(h.includes('month') && h.includes('account')) return 'internal';
+  return 'generic';
+}
+
+function normalizeRow(row, institution, headers){
+  // Returns {date, description, amount, type} in standard form
+  // amount: negative = spending, positive = income/credit (skip)
+  const h=headers.map(x=>x.trim());
+  const get=(key)=>(row[key]||row[h.find(k=>k.toLowerCase()===key.toLowerCase())]||'').trim();
+
+  if(institution==='citi'){
+    // Status, Date, Description, Debit, Credit
+    // Debit = money spent (positive number), Credit = payment/refund (positive number)
+    const debit  = parseFloat(get('Debit').replace(/[,$]/g,'')) || 0;
+    const credit = parseFloat(get('Credit').replace(/[,$]/g,'')) || 0;
+    const desc = get('Description');
+    // Skip payments/refunds (credit col has negative values in Citi CSV)
+    if(credit !== 0) return null;  // any credit = payment or refund — skip
+    if(debit <= 0) return null;
+    return {
+      date: normDate(get('Date')),
+      description: desc,
+      amount: -debit,   // make negative (spending)
+      type: 'Withdrawal',
+      account: 'Citi'
+    };
+  }
+  if(institution==='chase'){
+    // Date, Description, Category, Type, Amount, Memo
+    const amt = parseFloat(get('Amount').replace(/[,$]/g,'')) || 0;
+    if(amt >= 0) return null;
+    return {
+      date: normDate(get('Date')),
+      description: get('Description'),
+      amount: amt,
+      type: 'Withdrawal',
+      account: 'Chase'
+    };
+  }
+  if(institution==='bofa'){
+    const amt = parseFloat(get('Amount').replace(/[,$]/g,'')) || 0;
+    if(amt >= 0) return null;
+    return {
+      date: normDate(get('Date')),
+      description: get('Description'),
+      amount: amt,
+      type: 'Withdrawal',
+      account: 'BofA'
+    };
+  }
+  // internal / generic — original logic
+  const amtK = h.find(k=>k==='Amount');
+  const descK = h.find(k=>k==='Description');
+  const dateK = h.find(k=>k==='Date');
+  const typeK = h.find(k=>k==='Type');
+  const amt = parseFloat((row[amtK]||'').replace(/[,$]/g,'')) || 0;
+  if(isNaN(amt)||amt>=0) return null;
+  return {
+    date: (row[dateK]||'').trim(),
+    description: (row[descK]||'').trim(),
+    amount: amt,
+    type: (row[typeK]||'Withdrawal').trim(),
+    account: 'Checking'
+  };
+}
+
+function normDate(d){
+  // Normalize MM/DD/YYYY → YYYY-MM-DD
+  if(!d) return '';
+  const slash = d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(slash) return `${slash[3]}-${slash[1].padStart(2,'0')}-${slash[2].padStart(2,'0')}`;
+  return d; // already YYYY-MM-DD
+}
+
 function parseCSV(t){
-  const l=t.trim().split('\n'),h=l[0].split(',').map(x=>x.trim());
+  const l=t.trim().split('\n'),h=l[0].split(',').map(x=>x.replace(/^"|"$/g,'').trim());
   return l.slice(1).filter(x=>x.trim()).map(line=>{
     const v=[];let c='',q=false;
     for(const ch of line){if(ch==='"')q=!q;else if(ch===','&&!q){v.push(c.trim());c='';}else c+=ch;}
@@ -241,39 +327,55 @@ function yearFrom(d){return d?d.split('-')[0]:'';}
 
 // ── Pre-categorizer — maps descriptions to canonical workbook categories ──────
 // These must match EXACTLY the category names in the workbook dropdown
-function preCat(desc){
+function preCat(desc, amt){
   const d=desc.toUpperCase();
+  const a=Math.abs(amt||0);
+
   // HOME
   if(/MORTGAGE|MTG PAYMT/.test(d)) return 'Mortgage';
   if(/HOA|OLD NATIONAL BNK/.test(d)) return 'HOA';
   if(/HELOC/.test(d)) return 'HELOC Payment';
+  if(/FARMERS INS|ALLSTATE|STATE FARM HOME|HOMEOWNER|HOME INSUR/.test(d)) return 'Home Insurance';
   if(/HOME DEPOT/.test(d)) return 'Home Repairs/Projects';
   if(/BEST BUY/.test(d)) return 'Best Buy';
   if(/BLUELAND/.test(d)) return 'Cleaning Supplies';
+
   // UTILITIES
   if(/COMED/.test(d)) return 'ComEd';
   if(/PEOPLES GAS|PEOPLE.S GAS/.test(d)) return "People's Gas";
   if(/SIMPLISAFE/.test(d)) return 'SimpliSafe';
   if(/WATER BILL|CITY OF CHICAGO WATER/.test(d)) return 'Water';
-  if(/AT&T|COMCAST|XFINITY|INTERNET/.test(d)) return 'Internet';
+  if(/AT&T|COMCAST|XFINITY|INTERNET|EXPRESSVPN|EXPRESS VPN/.test(d)) return 'Internet';
+
   // TRANSPORT
-  if(/STATE FARM/.test(d)) return 'Car Insurance';
-  if(/SHELL OIL|BP#|QT 7[0-9]|SPEEDWAY|MARATHON OIL|GAS STATION/.test(d)) return 'Gas/Fuel';
+  if(/STATE FARM AUTO|STATE FARM INS/.test(d)) return 'Car Insurance';
+  if(/JIFFY LUBE|FIRESTONE|MIDAS|VALVOLINE|PEP BOYS|AUTOZONE|O.REILLY AUTO|NAPA AUTO|CAR WASH|AUTO WASH/.test(d)) return 'Auto';
+  if(/SHELL OIL|BP#|QT [0-9]|SPEEDWAY|MARATHON OIL|GAS STATION/.test(d)) return 'Gas/Fuel';
   if(/PARK CHICAGO|PARKING|SPOTHERO|PARKWHIZ/.test(d)) return 'Parking';
-  if(/CTA |VENTRA|METRA|DIVVY/.test(d)) return 'Transit';
+  if(/CTA |VENTRA|METRA|DIVVY|CURB SVC|TAXI APP/.test(d)) return 'Transit';
   if(/UBER(?! EATS)/.test(d)) return 'Transit';
   if(/LYFT/.test(d)) return 'Transit';
+
   // GROCERIES
   if(/WHOLEFDS|WHOLE FOOD|TRADER JOE|COSTCO|MARIANOS|JEWEL|OSCO|ALDI|TARGET T-/.test(d)) return 'Groceries';
-  // HEALTH
+
+  // HEALTH — amount-based BCBS split (same bank description, different amounts)
+  if(/BCBS|BLUECROSS|BLUE CROSS/.test(d)){
+    if(a >= 693 && a <= 715) return 'BCBS Arit';   // ~$703.84 ±$10
+    if(a >= 731 && a <= 753) return 'BCBS Aaron';  // ~$741.52 ±$10
+    return 'BCBS Arit';
+  }
   if(/PETCO|STOKELY/.test(d)) return 'Stokely (Pet)';
   if(/FIGO/.test(d)) return 'Figo (Pet Insurance)';
-  if(/BCBS.*ARIT/.test(d)) return 'BCBS Arit';
-  if(/BCBS.*AARON/.test(d)) return 'BCBS Aaron';
   if(/CIGNA/.test(d)) return 'Cigna';
   if(/TONAL/.test(d)) return 'Tonal';
-  if(/COMPOUNDING|ACUPUNCTURE|I-SQUARED|LIXIN SHA|MEDICAL GROUP|DENTAL|FRESH DENTAL|PHARMACY|CVS|WALGREEN|RITE AID/.test(d)) return 'Health/Medical';
+  if(/COMPOUNDING|ACUPUNCTURE|I-SQUARED|LIXIN SHA|MEDICAL GROUP|DENTAL|FRESH DENTAL|PHARMACY|CVS|WALGREEN|RITE AID|CHICAGO HOT YOGA|YOGA|GYM|EQUINOX|PLANET FITNESS|GOLD.S GYM|BLUEAIR|BLUE AIR/.test(d)) return 'Health/Medical';
+
+  // CLOTHING
+  if(/ZARA|H&M|GAP |OLD NAVY|BANANA REP|J\.CREW|JCREW|NORDSTROM|MACY.S|BLOOMINGDALE|UNIQLO|TARGET CLOTH|FOREVER 21|EXPRESS |ANTHROPOLOGIE|FREE PEOPLE|LULULEMON|NIKE|ADIDAS|PATAGONIA|REI CO-OP|REI\.COM|DECKERS|HOKA|MARMOT|NWL MARMOT|KLARNA/.test(d)) return 'Clothing';
+
   // ENTERTAINMENT
+  if(/DISNEY.PLUS|DISNEY\+|DISNEYPLUS/.test(d)) return 'Movies/Events';
   if(/SPOTIFY/.test(d)) return 'Spotify';
   if(/NETFLIX/.test(d)) return 'Netflix';
   if(/PRIME VIDEO|AMAZON PRIME/.test(d)) return 'Prime';
@@ -282,17 +384,27 @@ function preCat(desc){
   if(/ALAMO DRAFT|TST\* ALAMO|GENE SISKEL|MUSEUM|GALLERY|ZOO |AQUARIUM|SAIC-|ART INSTITUTE/.test(d)) return 'Movies/Events';
   if(/CURRENT AFFAIRS|MAGAZINE|SUBSTACK|NEW YORKER|NEW YORK TIMES|WASHINGTON POST|THE ATLANTIC|HARPER.S|NYT/.test(d)) return 'Magazines';
   if(/BOOKSTORE|BOOK STORE|SANDMEYERS|POWELL.S|STRAND |BARNES|HALF PRICE BOOK/.test(d)) return 'Magazines';
-  if(/LIQUOR|WINE|BEER|BAR |TAVERN|BREWERY/.test(d)) return 'Bars/Nightlife';
+  if(/LIQUOR|WINE|BEER|BAR |TAVERN|BREWERY|MILLERS PUB|PUB |1109 WILSON/.test(d)) return 'Bars/Nightlife';
   if(/RECREATION\.GOV|CAMPSITE|NATIONAL PARK/.test(d)) return 'Travel/Vacation';
+  if(/CITI FLEX PAY-AMERICAN|AMERICAN0012340/.test(d)) return 'Travel/Vacation';
   if(/UNITED AIR|DELTA AIR|SOUTHWEST|AMERICAN AIR|SPIRIT AIR|FRONTIER AIR/.test(d)) return 'Travel/Vacation';
   if(/MARRIOTT|HILTON|HYATT|IHG |HOLIDAY INN|BEST WESTERN|AIRBNB|VRBO/.test(d)) return 'Travel/Vacation';
   if(/EXPEDIA|BOOKING\.COM|HOTELS\.COM/.test(d)) return 'Travel/Vacation';
-  if(/AMAZON\.COM|AMAZON MKTPL/.test(d)) return 'Shopping';
+
+  // SHOPPING & GENERAL
+  if(/AMAZON\.COM|AMAZON MKTPL|PELA EARTH|ETSY|CAB STORE/.test(d)) return 'Shopping';
+  if(/POSTAGE|USPS|UPS STORE|FEDEX|STAMPS\.COM/.test(d)) return 'General Expense';
+  if(/TARGET(?! T-)/.test(d)) return 'Shopping';
+
   // FOOD
-  if(/COFFEE TREE|COFFEE|DUNKIN|STARBUCKS|DONUT|CAFE/.test(d)) return 'Coffee/Snacks';
+  if(/COFFEE TREE|COFFEE|DUNKIN|STARBUCKS|DONUT|CAFE|KOPI/.test(d)) return 'Coffee/Snacks';
   if(/TST\*|SQ \*|GRUBHUB|DOORDASH|UBER EATS/.test(d)) return 'Dining Out';
-  // SKIP transfers
-  if(/PAI ATM|^ATM |ROUND UPS|TRANSFER|JPMORG|INTEREST PAID|ATM FEE|DEPOSIT|SAVINGS ACCOUNT|SPENDING ACCOUNT|MONEY MARKET/.test(d)) return null;
+
+  // SKIP — autopayments, transfers, interest charges, credits
+  if(/AUTOPAY|AUTO-PMT|AUTO PMT|PLAN FEE|CITI FLEX PAY CREDIT|ONLINE PAYMENT/.test(d)) return null;
+  if(/INTEREST CHARGED|INTEREST PAID|FINANCE CHARGE/.test(d)) return null;
+  if(/PAI ATM|^ATM |ROUND UPS|TRANSFER|JPMORG|ATM FEE|DEPOSIT|SAVINGS ACCOUNT|SPENDING ACCOUNT|MONEY MARKET/.test(d)) return null;
+
   // DEFAULT
   return 'Dining Out';
 }
@@ -329,13 +441,17 @@ document.getElementById('btnRun').addEventListener('click',async()=>{
   document.getElementById('log').innerHTML='';
   setStep(2);prog(10);
 
-  const amtK=Object.keys(parsed[0]).find(k=>k.trim()==='Amount');
-  const descK=Object.keys(parsed[0]).find(k=>k.trim()==='Description');
-  const dateK=Object.keys(parsed[0]).find(k=>k.trim()==='Date');
-  const typeK=Object.keys(parsed[0]).find(k=>k.trim()==='Type');
+  const headers = Object.keys(parsed[0]);
+  const institution = detectInstitution(headers);
+  log('Institution detected: '+institution.toUpperCase(),'s');
 
   const allMonths=new Set(),allYears=new Set();
-  for(const t of parsed){const d=(t[dateK]||'').trim();const m=monthFrom(d),y=yearFrom(d);if(m)allMonths.add(m);if(y)allYears.add(y);}
+  for(const t of parsed){
+    const n=normalizeRow(t, institution, headers);
+    if(!n) continue;
+    const m=monthFrom(n.date),y=yearFrom(n.date);
+    if(m)allMonths.add(m);if(y)allYears.add(y);
+  }
   const primaryMonth=[...allMonths].sort()[allMonths.size-1]||'';
   const primaryYear=[...allYears].sort()[0]||new Date().getFullYear();
   const MF={Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
@@ -344,12 +460,13 @@ document.getElementById('btnRun').addEventListener('click',async()=>{
 
   const spending=[],skipped=[];
   for(const t of parsed){
-    const amt=parseFloat(t[amtK]),desc=(t[descK]||'').trim(),date=(t[dateK]||'').trim(),type=(t[typeK]||'Withdrawal').trim();
-    if(isNaN(amt)||amt>=0){skipped.push(t);continue;}
-    const cat=preCat(desc);if(!cat){skipped.push(t);continue;}
-    spending.push({date,month:monthFrom(date),amount:Math.abs(amt),description:desc,category:cat,type,account:'Checking'});
+    const n=normalizeRow(t, institution, headers);
+    if(!n){skipped.push(t);continue;}
+    const {date,description:desc,amount:amt,type,account}=n;
+    const cat=preCat(desc,amt);if(!cat){skipped.push(t);continue;}
+    spending.push({date,month:monthFrom(date),amount:Math.abs(amt),description:desc,category:cat,type,account});
   }
-  log('Pre-categorized: '+spending.length+' · Skipped: '+skipped.length+' (deposits/transfers)','s');
+    log('Pre-categorized: '+spending.length+' · Skipped: '+skipped.length+' (deposits/transfers)','s');
   prog(30);
 
   // AI categorization — send ALL uncategorized-as-dining or unknown to Claude
@@ -369,15 +486,15 @@ document.getElementById('btnRun').addEventListener('click',async()=>{
           messages:[{role:'user',content:`You are categorizing household spending transactions for the Richnsemo family budget tracker.
 
 CATEGORIES (use EXACTLY these names):
-Mortgage, HOA, HELOC Payment, Home Repairs/Projects, Home Depot, Best Buy,
-SimpliSafe, People's Gas, ComEd, Water, Internet,
+Mortgage, HOA, HELOC Payment, Home Repairs/Projects, Home Depot, Best Buy, Home Insurance,
+Cleaning Supplies, SimpliSafe, People's Gas, ComEd, Water, Internet,
 Groceries, Dining Out, Coffee/Snacks,
-Car Insurance, Gas/Fuel, Parking,
-Health/Medical, BCBS Arit, BCBS Aaron, Cigna, Figo (Pet Insurance), Stokely (Pet),
-Spotify, Tonal, BlueLand, Hulu, Prime, Magazines (magazines/newspapers/media subscriptions),
-Entertainment (movies, concerts, bars, streaming, events, museum, nightlife),
-Travel/Vacation (flights, hotels, camping, national parks, Airbnb),
-Shopping, Savings, Other
+Car Insurance, Gas/Fuel, Parking, Transit, Auto,
+BCBS Arit, BCBS Aaron, Cigna, Figo (Pet Insurance), Stokely (Pet), Tonal, Health/Medical,
+Movies/Events, Netflix, Hulu, Prime, Spotify, Magazines, Bars/Nightlife,
+Travel/Vacation, Shopping, Clothing,
+Personal Expense - Arit, Personal Expense - Aaron, General Expense,
+Emergency Fund, Vacation Fund, House Repair Fund, General Savings
 
 RULES:
 - Magazines = magazines, newspapers, media subscriptions (e.g. Current Affairs, Substack, NYT, New Yorker) — subcategory of Entertainment
